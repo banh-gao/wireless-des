@@ -1,0 +1,77 @@
+\documentclass{article}
+
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows}
+\begin{document}
+
+\centering
+\begin{tikzpicture}[node distance = 2cm, auto, trim left, semithick]
+    \tikzstyle{terminator} = [ellipse, draw,
+    text width=4.5em, text centered, inner sep=6pt]
+  \tikzstyle{decision} = [diamond, draw,
+    text width=4.5em,text centered, node distance=3cm, inner sep=0pt, aspect=2]
+  \tikzstyle{block} = [rectangle, draw, text width=3cm, text centered, minimum width=3cm,
+    minimum height=1cm]
+  \tikzstyle{line} = [draw, -latex']
+
+  % Place nodes
+  \node [terminator, text width=5em] (init) {on end\_rx(packet)};
+  \node [block, below of=init, node distance=2cm] (subrcv) {recv count--};
+  \node [decision, below of=subrcv,node distance=2cm] (rx) {is state RX?};
+  \node [decision, right of=rx, node distance=4cm] (rcv) {is packet RECEIVING?};
+  \node [block, right of=rcv, node distance=4cm] (setrcv) {set packet
+    RECEIVED};
+  \node [decision, right of=setrcv, node distance=4cm] (iscurr) {current packet = packet?};
+  \node [block, below of=iscurr, node distance=2cm] (setcurr) {current
+  packet = NONE};
+  \node [decision, below of=setcurr, node distance=2cm] (count) {ch free?};
+  \node [block, left of=count, node distance=4cm] (setproc) {set state PROC};
+  \node [block, below of=setproc, node distance=1.5cm] (cancelto)
+        {cancel rx\_timeout};
+  \node [block, below of=cancelto, node distance=1.5cm] (sched_proc)
+        {schedule end\_proc};
+  \node [decision, below of=rx, text width=5.5em, node distance=4cm] (sense) {is
+    state SENSE \&\& ch free?};
+   \node [block, right of=sense, node distance=4.5cm] (curpk) {current packet = dequeue()};
+   \node [block, below of=curpk, node distance=1.5cm] (settx) {set
+     state TX};
+  \node [block, below of=settx, node distance=1.5cm] (tx) {tx current packet};
+  \node [block, below of=tx, node distance=1.5cm] (sched_tx) {schedule end\_tx};
+
+  \node [terminator, below of=sense, node distance=8cm] (end) {end};
+
+  % Draw edges
+  \path [line] (init) -- (subrcv);
+
+  \path [line] (rx) -- node [near start] {yes} (rcv);
+  \path [line] (rx) -- node [near start] {no} (sense);
+
+  \path [line] (rcv) -- node [near start] {yes} (setrcv);
+  \path [line] (rcv.north) -- node [near start] {no} ++(0,1cm) -| (iscurr);
+
+  \path [line] (setrcv) -- (iscurr);
+  \path [line] (iscurr) -- node [near start] {yes} (setcurr);
+  \path [line] (iscurr.east) -- node [near start] {no} ++(1cm,0) |- (count);
+  \path [line] (setcurr) -- (count);
+
+  \path [line] (count) -- node [near start] {yes} (setproc);
+  \path [line] (count) |- node [near start] {no} (end);
+
+  \path [line] (setproc) -- (cancelto);
+  \path [line] (cancelto) -- (sched_proc);
+  \path [line] (sched_proc) |- (end);
+
+  \path [line] (subrcv) -- (rx);
+  \path [line] (sense) -- node [near start] {no} (end);
+
+  \path [line] (sense) -- node [near start] {yes} (curpk);
+  \path [line] (curpk) -- (settx);
+
+  \path [line] (settx) -- (tx);
+  \path [line] (tx) -- (sched_tx);
+  \path [line] (sched_tx) |- (end);
+
+\end{tikzpicture}
+
+
+\end{document}
