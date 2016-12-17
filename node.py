@@ -64,7 +64,7 @@ class Node(Module):
         # queue of packets to be sent
         self.queue = []
         # current state
-        self.state = Node.IDLE
+
         self.logger.log_state(self, Node.IDLE)
         # save position
         self.x = x
@@ -85,7 +85,7 @@ class Node(Module):
         self.fsm = FSM(Node.IDLE, {
             (Node.IDLE, Events.PACKET_ARRIVAL): self.transmit_arrived,
             (Node.IDLE, Events.START_RX): self.try_receiving,
-            (Node.IDLE, Events.END_RX): self.remove_detected_packet,
+            (Node.IDLE, Events.END_RX): self.end_packet,
 
             (Node.RX, Events.PACKET_ARRIVAL): self.enqueue_arrived,
             (Node.RX, Events.START_RX): self.set_corrupted,
@@ -94,12 +94,12 @@ class Node(Module):
 
             (Node.PROC, Events.PACKET_ARRIVAL): self.enqueue_arrived,
             (Node.PROC, Events.START_RX): self.set_corrupted,
-            (Node.PROC, Events.END_RX): self.remove_detected_packet,
+            (Node.PROC, Events.END_RX): self.end_packet,
             (Node.PROC, Events.END_PROC): self.resume_operations,
 
             (Node.TX, Events.PACKET_ARRIVAL): self.enqueue_arrived,
             (Node.TX, Events.START_RX): self.set_corrupted,
-            (Node.TX, Events.END_RX): self.remove_detected_packet,
+            (Node.TX, Events.END_RX): self.end_packet,
             (Node.TX, Events.END_TX): self.switch_to_proc
         })
 
@@ -114,23 +114,8 @@ class Node(Module):
         Handles events notified to the node
         :param event: the event
         """
-        if event.get_type() == Events.PACKET_ARRIVAL:
-            self.logger.log_arrival(self, event.get_obj())
-            self.state = self.handle_arrival(event)
-        elif event.get_type() == Events.START_RX:
-            self.state = self.handle_start_rx(event)
-        elif event.get_type() == Events.END_RX:
-            self.state = self.handle_end_rx(event)
-        elif event.get_type() == Events.END_TX:
-            self.state = self.switch_to_proc(event)
-        elif event.get_type() == Events.END_PROC:
-            self.state = self.resume_operations(event)
-        elif event.get_type() == Events.RX_TIMEOUT:
-            self.state = self.switch_to_proc(event)
-        else:
-            print("Node %d has received a notification for event type %d which"
-                  " can't be handled", (self.get_id(), event.get_type()))
-            sys.exit(1)
+
+        self.fsm.handle_event(event)
 
     def schedule_next_arrival(self):
         """
@@ -147,22 +132,19 @@ class Node(Module):
                       self, self, packet_size)
         self.sim.schedule_event(event)
 
-    def handle_arrival(self, event):
-        if(self.state == Node.IDLE):
-            return self.transmit_arrived(event)
-        else:
-            return self.enqueue_arrived(event)
-
     def transmit_arrived(self, event):
         """
         Handles a packet arrival
         """
         assert(len(self.queue) == 0)
+        self.logger.log_arrival(self, event.get_obj())
+
         self.schedule_next_arrival()
         return self.transmit_packet(event.get_obj())
 
     def enqueue_arrived(self, event):
         packet_size = event.get_obj()
+        self.logger.log_arrival(self, event.get_obj())
         if self.queue_size == 0 or len(self.queue) < self.queue_size:
             # if queue size is infinite or there is still space
             self.queue.append(packet_size)
@@ -173,21 +155,8 @@ class Node(Module):
 
         self.schedule_next_arrival()
 
-        return self.state
-
-    def handle_start_rx(self, event):
-        """
-        Handles beginning of a frame reception
-        :param event: the RX event including the frame being received
-        """
-
-        if self.state == Node.IDLE:
-            return self.try_receiving(event)
-        else:
-            return self.set_corrupted(event)
-
     def try_receiving(self, event):
-        nextS = self.state
+        nextState = None
 
         new_packet = event.get_obj()
 
@@ -196,7 +165,7 @@ class Node(Module):
             assert(self.current_pkt is None)
             new_packet.set_state(Packet.PKT_RECEIVING)
             self.current_pkt = new_packet
-            nextS = Node.RX
+            nextState = Node.RX
             # create and schedule the RX timeout
             self.timeout_event = Event(self.sim.get_time() +
                                        self.timeout_time, Events.RX_TIMEOUT,
@@ -215,37 +184,23 @@ class Node(Module):
         # count this as currently being received
         self.add_detected_packet()
 
-        return nextS
+        return nextState
 
     def set_corrupted(self, event):
         new_packet = event.get_obj()
 
         # node is either receiving or transmitting
-        if self.state == Node.RX:
-            assert(self.current_pkt is not None)
+        if self.current_pkt is not None:
             # the frame we are currently receiving is corrupted by a
             # collision, if we have one
             self.current_pkt.set_state(Packet.PKT_CORRUPTED)
-            # the same holds for the new incoming packet. either if we are in
-            # the RX, TX, or PROC state, we won't be able to decode it
-            new_packet.set_state(Packet.PKT_CORRUPTED)
+
+        # the same holds for the new incoming packet. either if we are in
+        # the RX, TX, or PROC state, we won't be able to decode it
+        new_packet.set_state(Packet.PKT_CORRUPTED)
 
         # count this as currently being received
         self.add_detected_packet()
-
-        return self.state
-
-    def handle_end_rx(self, event):
-        """
-        Handles the end of a reception
-        :param event: the END_RX event
-        """
-
-        if(self.state == Node.RX):
-            return self.end_receiving(event)
-        else:
-            self.remove_detected_packet()
-            return self.state
 
     def end_receiving(self, event):
         self.remove_detected_packet()
@@ -266,6 +221,10 @@ class Node(Module):
         self.logger.log_packet(event.get_source(), self, packet)
 
         return self.switch_to_proc(event)
+
+    def end_packet(self, event):
+        self.remove_detected_packet()
+        self.logger.log_packet(event.get_source(), self, event.get_obj())
 
     def switch_to_proc(self, event):
         """
@@ -353,15 +312,17 @@ class FSM:
         self.trans = trans
 
     def handle_event(self, event):
-        key = (self.state, event)
+        key = (self.state, event.get_type())
 
         if key not in self.trans.keys():
             raise AssertionError("Unhandled event %s in state %s" %
-                                 (event, self.state))
+                                 (event.get_type(), self.state))
 
         action = self.trans[key]
 
-        self.state = action(self.state, event)
+        nextState = action(event)
 
-        if(self.state is None):
-            raise Exception("Undefined next state for action %s" % action)
+        if(nextState is not None):
+            self.state = nextState
+
+        return self.state
