@@ -118,7 +118,8 @@ class Node(Module):
         :param event: the event
         """
         if event.get_type() == Events.PACKET_ARRIVAL:
-            self.state = self.handle_arrival()
+            self.logger.log_arrival(self, event.get_obj())
+            self.state = self.handle_arrival(event)
         elif event.get_type() == Events.START_RX:
             self.state = self.handle_start_rx(event)
         elif event.get_type() == Events.END_RX:
@@ -140,38 +141,31 @@ class Node(Module):
         """
         # extract random value for next arrival
         arrival = self.interarrival.get_value()
-        # generate an event setting this node as destination
-        event = Event(self.sim.get_time() + arrival, Events.PACKET_ARRIVAL,
-                      self, self)
-        self.sim.schedule_event(event)
-
-    def handle_arrival(self):
-        """
-        Handles a packet arrival
-        """
-        # schedule next arrival
-        self.schedule_next_arrival()
 
         # draw packet size from the distribution
         packet_size = self.size.get_value()
-        # log the arrival
-        self.logger.log_arrival(self, packet_size)
-        if self.state == Node.IDLE:
-            # if we are in a idle state, then there must be no packets in the
-            # queue
-            assert(len(self.queue) == 0)
-            # if current state is IDLE and there are no packets in the queue, we
-            # can start transmitting
-            self.transmit_packet(packet_size)
 
-            self.logger.log_state(self, Node.TX)
-            return Node.TX
+        # generate an event setting this node as destination
+        event = Event(self.sim.get_time() + arrival, Events.PACKET_ARRIVAL,
+                      self, self, packet_size)
+        self.sim.schedule_event(event)
+
+    def handle_arrival(self, event):
+        if(self.state == Node.IDLE):
+            return self.transmit_arrived(event)
         else:
-            # if we are either transmitting or receiving, packet must be queued
-            self.enqueue(packet_size)
-            return self.state
+            return self.enqueue_arrived(event)
 
-    def enqueue(self, packet_size):
+    def transmit_arrived(self, event):
+        """
+        Handles a packet arrival
+        """
+        assert(len(self.queue) == 0)
+        self.schedule_next_arrival()
+        return self.transmit_packet(event.get_obj())
+
+    def enqueue_arrived(self, event):
+        packet_size = event.get_obj()
         if self.queue_size == 0 or len(self.queue) < self.queue_size:
             # if queue size is infinite or there is still space
             self.queue.append(packet_size)
@@ -179,6 +173,10 @@ class Node(Module):
         else:
             # if there is no space left, we drop the packet and log
             self.logger.log_queue_drop(self, packet_size)
+
+        self.schedule_next_arrival()
+
+        return self.state
 
     def handle_start_rx(self, event):
         """
@@ -328,9 +326,7 @@ class Node(Module):
         else:
             # there is a packet ready, trasmit it
             packet_size = self.queue.pop(0)
-            self.transmit_packet(packet_size)
-            nextS = Node.TX
-            self.logger.log_state(self, Node.TX)
+            nextS = self.transmit_packet(packet_size)
             self.logger.log_queue_length(self, len(self.queue))
 
         return nextS
@@ -340,6 +336,7 @@ class Node(Module):
         Generates, sends, and schedules end of transmission of a new packet
         :param packet_size: size of the packet to send in bytes
         """
+
         assert(self.current_pkt is None)
         duration = packet_size * 8 / self.datarate
         # transmit packet
@@ -350,6 +347,9 @@ class Node(Module):
                        self, packet)
         self.sim.schedule_event(end_tx)
         self.current_pkt = packet
+
+        self.logger.log_state(self, Node.TX)
+        return Node.TX
 
     def get_posx(self):
         """
