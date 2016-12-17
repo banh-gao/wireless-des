@@ -90,7 +90,7 @@ class Node(Module):
             (Node.RX, Events.PACKET_ARRIVAL): self.enqueue_arrived,
             (Node.RX, Events.START_RX): self.set_corrupted,
             (Node.RX, Events.END_RX): self.end_receiving,
-            (Node.RX, Events.RX_TIMEOUT): self.testfsm,
+            (Node.RX, Events.RX_TIMEOUT): self.switch_to_proc,
 
             (Node.PROC, Events.PACKET_ARRIVAL): self.enqueue_arrived,
             (Node.PROC, Events.START_RX): self.set_corrupted,
@@ -129,7 +129,7 @@ class Node(Module):
         elif event.get_type() == Events.END_PROC:
             self.state = self.handle_end_proc(event)
         elif event.get_type() == Events.RX_TIMEOUT:
-            self.state = self.handle_rx_timeout(event)
+            self.state = self.switch_to_proc(event)
         else:
             print("Node %d has received a notification for event type %d which"
                   " can't be handled", (self.get_id(), event.get_type()))
@@ -205,7 +205,6 @@ class Node(Module):
             new_packet.set_state(Packet.PKT_RECEIVING)
             self.current_pkt = new_packet
             nextS = Node.RX
-            assert(self.timeout_event is None)
             # create and schedule the RX timeout
             self.timeout_event = Event(self.sim.get_time() +
                                        self.timeout_time, Events.RX_TIMEOUT,
@@ -271,7 +270,6 @@ class Node(Module):
 
         # delete the timeout event
         self.sim.cancel_event(self.timeout_event)
-        self.timeout_event = None
 
         self.logger.log_packet(event.get_source(), self, packet)
 
@@ -290,21 +288,6 @@ class Node(Module):
 
         self.logger.log_state(self, Node.PROC)
         return Node.PROC
-
-    def handle_rx_timeout(self, event):
-        """
-        Handles RX timeout
-        :param event: the RX_TIMEOUT event
-        """
-        # when this event happens, we can only be in RX state, otherwise
-        # something is wrong
-        assert(self.state == Node.RX)
-        # in addition, the timeout should be longer than any possible packet,
-        # meaning that we must not be receiving a packet when the timeout occurs
-        assert(self.current_pkt is None)
-        # the timeout forces us to switch to the PROC state
-        self.timeout_event = None
-        return self.switch_to_proc()
 
     def handle_end_proc(self, event):
         """
