@@ -100,7 +100,7 @@ class Node(Module):
             (Node.TX, Events.PACKET_ARRIVAL): self.enqueue_arrived,
             (Node.TX, Events.START_RX): self.set_corrupted,
             (Node.TX, Events.END_RX): self.remove_detected_packet,
-            (Node.TX, Events.END_TX): self.testfsm
+            (Node.TX, Events.END_TX): self.switch_to_proc
         })
 
     def testfsm(self):
@@ -125,7 +125,7 @@ class Node(Module):
         elif event.get_type() == Events.END_RX:
             self.state = self.handle_end_rx(event)
         elif event.get_type() == Events.END_TX:
-            self.state = self.handle_end_tx(event)
+            self.state = self.switch_to_proc(event)
         elif event.get_type() == Events.END_PROC:
             self.state = self.handle_end_proc(event)
         elif event.get_type() == Events.RX_TIMEOUT:
@@ -275,9 +275,9 @@ class Node(Module):
 
         self.logger.log_packet(event.get_source(), self, packet)
 
-        return self.switch_to_proc()
+        return self.switch_to_proc(event)
 
-    def switch_to_proc(self):
+    def switch_to_proc(self, event):
         """
         Switches to the processing state and schedules the end_proc event
         """
@@ -304,18 +304,6 @@ class Node(Module):
         assert(self.current_pkt is None)
         # the timeout forces us to switch to the PROC state
         self.timeout_event = None
-        return self.switch_to_proc()
-
-    def handle_end_tx(self, event):
-        """
-        Handles the end of a transmission done by this node
-        :param event: the END_TX event
-        """
-        assert(self.state == Node.TX)
-        assert(self.current_pkt is not None)
-        assert(self.current_pkt.get_id() == event.get_obj().get_id())
-        self.current_pkt = None
-        # the only thing to do here is to move to the PROC state
         return self.switch_to_proc()
 
     def handle_end_proc(self, event):
