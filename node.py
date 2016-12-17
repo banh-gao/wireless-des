@@ -14,7 +14,6 @@
 # Copyright (C) 2016 Michele Segata <segata@ccs-labs.org>
 #                    Daniel Zozin <zdenial@gmx.com>
 
-import sys
 from module import Module
 from fsm import FSM
 from distribution import Distribution
@@ -136,10 +135,9 @@ class Node(Module, FSM):
         Handles a packet arrival
         """
         assert(len(self.queue) == 0)
-        self.logger.log_arrival(self, event.get_obj())
+        self.enqueue_arrived(event)
 
-        self.schedule_next_arrival()
-        return self.transmit_packet(event.get_obj())
+        return self.transmit_packet()
 
     def enqueue_arrived(self, event):
         packet_size = event.get_obj()
@@ -250,16 +248,18 @@ class Node(Module, FSM):
             # resuming operations but nothing to transmit. back to IDLE
             return Node.IDLE
         else:
-            # there is a packet ready, trasmit it
-            packet_size = self.queue.pop(0)
-            self.logger.log_queue_length(self, len(self.queue))
-            return self.transmit_packet(packet_size)
+            # there is a packet ready in the queue, trasmit it
+            return self.transmit_packet()
 
-    def transmit_packet(self, packet_size):
+    def transmit_packet(self):
         """
-        Generates, sends, and schedules end of transmission of a new packet
-        :param packet_size: size of the packet to send in bytes
+        Sends and enqueued packet
         """
+
+        assert(len(self.queue) > 0)
+
+        packet_size = self.queue.pop(0)
+        self.logger.log_queue_length(self, len(self.queue))
 
         assert(self.current_pkt is None)
         duration = packet_size * 8 / self.datarate
