@@ -118,17 +118,17 @@ class Node(Module):
         :param event: the event
         """
         if event.get_type() == Events.PACKET_ARRIVAL:
-            self.handle_arrival()
+            self.state = self.handle_arrival()
         elif event.get_type() == Events.START_RX:
-            self.handle_start_rx(event)
+            self.state = self.handle_start_rx(event)
         elif event.get_type() == Events.END_RX:
-            self.handle_end_rx(event)
+            self.state = self.handle_end_rx(event)
         elif event.get_type() == Events.END_TX:
-            self.handle_end_tx(event)
+            self.state = self.handle_end_tx(event)
         elif event.get_type() == Events.END_PROC:
-            self.handle_end_proc(event)
+            self.state = self.handle_end_proc(event)
         elif event.get_type() == Events.RX_TIMEOUT:
-            self.handle_rx_timeout(event)
+            self.state = self.handle_rx_timeout(event)
         else:
             print("Node %d has received a notification for event type %d which"
                   " can't be handled", (self.get_id(), event.get_type()))
@@ -149,6 +149,9 @@ class Node(Module):
         """
         Handles a packet arrival
         """
+        # schedule next arrival
+        self.schedule_next_arrival()
+
         # draw packet size from the distribution
         packet_size = self.size.get_value()
         # log the arrival
@@ -160,13 +163,13 @@ class Node(Module):
             # if current state is IDLE and there are no packets in the queue, we
             # can start transmitting
             self.transmit_packet(packet_size)
-            self.state = Node.TX
+
             self.logger.log_state(self, Node.TX)
+            return Node.TX
         else:
             # if we are either transmitting or receiving, packet must be queued
             self.enqueue(packet_size)
-        # schedule next arrival
-        self.schedule_next_arrival()
+            return self.state
 
     def enqueue(self, packet_size):
         if self.queue_size == 0 or len(self.queue) < self.queue_size:
@@ -182,6 +185,9 @@ class Node(Module):
         Handles beginning of a frame reception
         :param event: the RX event including the frame being received
         """
+
+        nextS = self.state
+
         new_packet = event.get_obj()
         if self.state == Node.IDLE:
             if self.is_channel_free():
@@ -189,7 +195,7 @@ class Node(Module):
                 assert(self.current_pkt is None)
                 new_packet.set_state(Packet.PKT_RECEIVING)
                 self.current_pkt = new_packet
-                self.state = Node.RX
+                nextS = Node.RX
                 assert(self.timeout_event is None)
                 # create and schedule the RX timeout
                 self.timeout_event = Event(self.sim.get_time() +
@@ -214,6 +220,7 @@ class Node(Module):
             # the same holds for the new incoming packet. either if we are in
             # the RX, TX, or PROC state, we won't be able to decode it
             new_packet.set_state(Packet.PKT_CORRUPTED)
+
         # in any case, we schedule a new event to handle the end of this frame
         end_rx = Event(self.sim.get_time() + new_packet.get_duration(),
                        Events.END_RX, self, self, new_packet)
@@ -222,12 +229,16 @@ class Node(Module):
         # count this as currently being received
         self.packets_on_ch = self.packets_on_ch + 1
 
+        return nextS
+
     def handle_end_rx(self, event):
         """
         Handles the end of a reception
         :param event: the END_RX event
         """
         packet = event.get_obj()
+
+        nextS = self.state
 
         self.packets_on_ch = self.packets_on_ch - 1
 
@@ -255,13 +266,15 @@ class Node(Module):
             if self.is_channel_free():
                 # this is the only frame currently in the air, move to PROC
                 # before restarting operations
-                self.switch_to_proc()
+                nextS = self.switch_to_proc()
                 # delete the timeout event
                 self.sim.cancel_event(self.timeout_event)
                 self.timeout_event = None
 
         # log packet
         self.logger.log_packet(event.get_source(), self, packet)
+
+        return nextS
 
     def switch_to_proc(self):
         """
@@ -271,8 +284,8 @@ class Node(Module):
         proc = Event(self.sim.get_time() + proc_time, Events.END_PROC, self,
                      self)
         self.sim.schedule_event(proc)
-        self.state = Node.PROC
         self.logger.log_state(self, Node.PROC)
+        return Node.PROC
 
     def handle_rx_timeout(self, event):
         """
@@ -286,8 +299,8 @@ class Node(Module):
         # meaning that we must not be receiving a packet when the timeout occurs
         assert(self.current_pkt is None)
         # the timeout forces us to switch to the PROC state
-        self.switch_to_proc()
         self.timeout_event = None
+        return self.switch_to_proc()
 
     def handle_end_tx(self, event):
         """
@@ -299,7 +312,7 @@ class Node(Module):
         assert(self.current_pkt.get_id() == event.get_obj().get_id())
         self.current_pkt = None
         # the only thing to do here is to move to the PROC state
-        self.switch_to_proc()
+        return self.switch_to_proc()
 
     def handle_end_proc(self, event):
         """
@@ -307,17 +320,20 @@ class Node(Module):
         :param event: the END_PROC event
         """
         assert(self.state == Node.PROC)
+        nextS = Node.IDLE
         if len(self.queue) == 0:
             # resuming operations but nothing to transmit. back to IDLE
-            self.state = Node.IDLE
+            nextS = Node.IDLE
             self.logger.log_state(self, Node.IDLE)
         else:
             # there is a packet ready, trasmit it
             packet_size = self.queue.pop(0)
             self.transmit_packet(packet_size)
-            self.state = Node.TX
+            nextS = Node.TX
             self.logger.log_state(self, Node.TX)
             self.logger.log_queue_length(self, len(self.queue))
+
+        return nextS
 
     def transmit_packet(self, packet_size):
         """
