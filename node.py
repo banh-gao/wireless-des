@@ -95,16 +95,13 @@ class Node(Module):
             (Node.PROC, Events.PACKET_ARRIVAL): self.enqueue_arrived,
             (Node.PROC, Events.START_RX): self.set_corrupted,
             (Node.PROC, Events.END_RX): self.remove_detected_packet,
-            (Node.PROC, Events.END_PROC): self.testfsm,
+            (Node.PROC, Events.END_PROC): self.resume_operations,
 
             (Node.TX, Events.PACKET_ARRIVAL): self.enqueue_arrived,
             (Node.TX, Events.START_RX): self.set_corrupted,
             (Node.TX, Events.END_RX): self.remove_detected_packet,
             (Node.TX, Events.END_TX): self.switch_to_proc
         })
-
-    def testfsm(self):
-        return Node.IDLE
 
     def initialize(self):
         """
@@ -127,7 +124,7 @@ class Node(Module):
         elif event.get_type() == Events.END_TX:
             self.state = self.switch_to_proc(event)
         elif event.get_type() == Events.END_PROC:
-            self.state = self.handle_end_proc(event)
+            self.state = self.resume_operations(event)
         elif event.get_type() == Events.RX_TIMEOUT:
             self.state = self.switch_to_proc(event)
         else:
@@ -289,24 +286,21 @@ class Node(Module):
         self.logger.log_state(self, Node.PROC)
         return Node.PROC
 
-    def handle_end_proc(self, event):
+    def resume_operations(self, event):
         """
         Handles the end of the processing period, resuming operations
         :param event: the END_PROC event
         """
-        assert(self.state == Node.PROC)
-        nextS = Node.IDLE
+
         if len(self.queue) == 0:
-            # resuming operations but nothing to transmit. back to IDLE
-            nextS = Node.IDLE
             self.logger.log_state(self, Node.IDLE)
+            # resuming operations but nothing to transmit. back to IDLE
+            return Node.IDLE
         else:
             # there is a packet ready, trasmit it
             packet_size = self.queue.pop(0)
-            nextS = self.transmit_packet(packet_size)
             self.logger.log_queue_length(self, len(self.queue))
-
-        return nextS
+            return self.transmit_packet(packet_size)
 
     def transmit_packet(self, packet_size):
         """
