@@ -181,11 +181,6 @@ class Node(Module):
         :param event: the RX event including the frame being received
         """
 
-        # in any case, we schedule a new event to handle the end of this frame
-        end_rx = Event(self.sim.get_time() + event.get_obj().get_duration(),
-                       Events.END_RX, self, self, event.get_obj())
-        self.sim.schedule_event(end_rx)
-
         if self.state == Node.IDLE:
             return self.try_receiving(event)
         else:

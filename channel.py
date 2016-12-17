@@ -98,12 +98,22 @@ class Channel(Module):
             # compute propagation delay: distance / speed of light
             propagation_delay = self.distance(source_node, neighbor) /\
                                 Channel.SOL
+
+            start_time = self.sim.get_time() + propagation_delay
+
             # generate and schedule START_RX event at receiver
             # be sure to make a copy of the packet and not pass the same
             # reference to multiple nodes, as they will process the packet in
             # different ways. one node might be able to receive it, one node
             # might not
-            event = Event(self.sim.get_time() + propagation_delay,
-                          Events.START_RX, neighbor, source_node,
-                          copy.deepcopy(packet))
-            self.sim.schedule_event(event)
+            nodePacket = copy.deepcopy(packet)
+            start_rx = Event(start_time,
+                             Events.START_RX, neighbor, source_node,
+                             nodePacket)
+            self.sim.schedule_event(start_rx)
+
+            # also schedule the event to handle the end of this frame
+            end_rx = Event(start_time + nodePacket.get_duration(),
+                           Events.END_RX, neighbor, source_node,
+                           nodePacket)
+            self.sim.schedule_event(end_rx)
