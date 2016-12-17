@@ -103,6 +103,9 @@ class Node(Module):
             (Node.TX, Events.END_TX): self.testfsm
         })
 
+    def testfsm(self):
+        return Node.IDLE
+
     def initialize(self):
         """
         Initialization. Starts node operation by scheduling the first packet
@@ -161,15 +164,18 @@ class Node(Module):
             self.logger.log_state(self, Node.TX)
         else:
             # if we are either transmitting or receiving, packet must be queued
-            if self.queue_size == 0 or len(self.queue) < self.queue_size:
-                # if queue size is infinite or there is still space
-                self.queue.append(packet_size)
-                self.logger.log_queue_length(self, len(self.queue))
-            else:
-                # if there is no space left, we drop the packet and log
-                self.logger.log_queue_drop(self, packet_size)
+            self.enqueue(packet_size)
         # schedule next arrival
         self.schedule_next_arrival()
+
+    def enqueue(self, packet_size):
+        if self.queue_size == 0 or len(self.queue) < self.queue_size:
+            # if queue size is infinite or there is still space
+            self.queue.append(packet_size)
+            self.logger.log_queue_length(self, len(self.queue))
+        else:
+            # if there is no space left, we drop the packet and log
+            self.logger.log_queue_drop(self, packet_size)
 
     def handle_start_rx(self, event):
         """
