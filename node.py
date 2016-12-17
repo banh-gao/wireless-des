@@ -83,22 +83,22 @@ class Node(Module):
         self.timeout_time = self.maxsize * 8.0 / self.datarate + 10e-6
 
         self.fsm = FSM(Node.IDLE, {
-            (Node.IDLE, Events.PACKET_ARRIVAL): self.testfsm,
-            (Node.IDLE, Events.START_RX): self.testfsm,
+            (Node.IDLE, Events.PACKET_ARRIVAL): self.transmit_arrived,
+            (Node.IDLE, Events.START_RX): self.try_receiving,
             (Node.IDLE, Events.END_RX): self.testfsm,
 
-            (Node.RX, Events.PACKET_ARRIVAL): self.testfsm,
-            (Node.RX, Events.START_RX): self.testfsm,
+            (Node.RX, Events.PACKET_ARRIVAL): self.enqueue_arrived,
+            (Node.RX, Events.START_RX): self.set_corrupted,
             (Node.RX, Events.END_RX): self.testfsm,
             (Node.RX, Events.RX_TIMEOUT): self.testfsm,
 
-            (Node.PROC, Events.PACKET_ARRIVAL): self.testfsm,
-            (Node.PROC, Events.START_RX): self.testfsm,
+            (Node.PROC, Events.PACKET_ARRIVAL): self.enqueue_arrived,
+            (Node.PROC, Events.START_RX): self.set_corrupted,
             (Node.PROC, Events.END_RX): self.testfsm,
             (Node.PROC, Events.END_PROC): self.testfsm,
 
-            (Node.TX, Events.PACKET_ARRIVAL): self.testfsm,
-            (Node.TX, Events.START_RX): self.testfsm,
+            (Node.TX, Events.PACKET_ARRIVAL): self.enqueue_arrived,
+            (Node.TX, Events.START_RX): self.set_corrupted,
             (Node.TX, Events.END_RX): self.testfsm,
             (Node.TX, Events.END_TX): self.testfsm
         })
@@ -184,50 +184,65 @@ class Node(Module):
         :param event: the RX event including the frame being received
         """
 
+        # in any case, we schedule a new event to handle the end of this frame
+        end_rx = Event(self.sim.get_time() + event.get_obj().get_duration(),
+                       Events.END_RX, self, self, event.get_obj())
+        self.sim.schedule_event(end_rx)
+
+        if self.state == Node.IDLE:
+            return self.try_receiving(event)
+        else:
+            return self.set_corrupted(event)
+
+    def try_receiving(self, event):
         nextS = self.state
 
         new_packet = event.get_obj()
-        if self.state == Node.IDLE:
-            if self.is_channel_free():
-                # node is idle: it will try to receive this packet
-                assert(self.current_pkt is None)
-                new_packet.set_state(Packet.PKT_RECEIVING)
-                self.current_pkt = new_packet
-                nextS = Node.RX
-                assert(self.timeout_event is None)
-                # create and schedule the RX timeout
-                self.timeout_event = Event(self.sim.get_time() +
-                                           self.timeout_time, Events.RX_TIMEOUT,
-                                           self, self, None)
-                self.sim.schedule_event(self.timeout_event)
-                self.logger.log_state(self, Node.RX)
-            else:
-                # there is another signal in the air but we are IDLE. this
-                # happens if we start receiving a frame while transmitting
-                # another. when we are done with the transmission we assume we
-                # are not able to detect that there is another frame in the air
-                # (we are not doing carrier sensing). In this case we assume we
-                # are not able to detect the new one and set that to corrupted
-                new_packet.set_state(Packet.PKT_CORRUPTED)
-        else:
-            # node is either receiving or transmitting
-            if self.state == Node.RX and self.current_pkt is not None:
-                # the frame we are currently receiving is corrupted by a
-                # collision, if we have one
-                self.current_pkt.set_state(Packet.PKT_CORRUPTED)
-            # the same holds for the new incoming packet. either if we are in
-            # the RX, TX, or PROC state, we won't be able to decode it
-            new_packet.set_state(Packet.PKT_CORRUPTED)
 
-        # in any case, we schedule a new event to handle the end of this frame
-        end_rx = Event(self.sim.get_time() + new_packet.get_duration(),
-                       Events.END_RX, self, self, new_packet)
-        self.sim.schedule_event(end_rx)
+        if self.is_channel_free():
+            # node is idle: it will try to receive this packet
+            assert(self.current_pkt is None)
+            new_packet.set_state(Packet.PKT_RECEIVING)
+            self.current_pkt = new_packet
+            nextS = Node.RX
+            assert(self.timeout_event is None)
+            # create and schedule the RX timeout
+            self.timeout_event = Event(self.sim.get_time() +
+                                       self.timeout_time, Events.RX_TIMEOUT,
+                                       self, self, None)
+            self.sim.schedule_event(self.timeout_event)
+            self.logger.log_state(self, Node.RX)
+        else:
+            # there is another signal in the air but we are IDLE. this
+            # happens if we start receiving a frame while transmitting
+            # another. when we are done with the transmission we assume we
+            # are not able to detect that there is another frame in the air
+            # (we are not doing carrier sensing). In this case we assume we
+            # are not able to detect the new one and set that to corrupted
+            new_packet.set_state(Packet.PKT_CORRUPTED)
 
         # count this as currently being received
         self.packets_on_ch = self.packets_on_ch + 1
 
         return nextS
+
+    def set_corrupted(self, event):
+        new_packet = event.get_obj()
+
+        # node is either receiving or transmitting
+        if self.state == Node.RX:
+            assert(self.current_pkt is not None)
+            # the frame we are currently receiving is corrupted by a
+            # collision, if we have one
+            self.current_pkt.set_state(Packet.PKT_CORRUPTED)
+            # the same holds for the new incoming packet. either if we are in
+            # the RX, TX, or PROC state, we won't be able to decode it
+            new_packet.set_state(Packet.PKT_CORRUPTED)
+
+        # count this as currently being received
+        self.packets_on_ch = self.packets_on_ch + 1
+
+        return self.state
 
     def handle_end_rx(self, event):
         """
@@ -245,6 +260,7 @@ class Node(Module):
         if self.current_pkt is not None and \
            packet.get_id() == self.current_pkt.get_id():
             assert(self.state == Node.RX)
+
         if self.state == Node.RX:
             if packet.get_state() == Packet.PKT_RECEIVING:
                 # the packet is not in a corrupted state: we succesfully
@@ -253,21 +269,11 @@ class Node(Module):
                 # just to be sure: we can only correctly receive the packet we
                 # were trying to decode
                 assert(packet.get_id() == self.current_pkt.get_id())
-            # we might be in RX state but have no current packet. this can
-            # happen when a packet overlaps with the current one being received
-            # and the one being received terminates earlier. we assume to stay
-            # in the RX state because we are not able to detect the end of the
-            # frame
-            if self.current_pkt is not None and \
-               packet.get_id() == self.current_pkt.get_id():
-                self.current_pkt = None
-            if self.is_channel_free():
-                # this is the only frame currently in the air, move to PROC
-                # before restarting operations
-                nextS = self.switch_to_proc()
-                # delete the timeout event
-                self.sim.cancel_event(self.timeout_event)
-                self.timeout_event = None
+
+            nextS = self.switch_to_proc()
+            # delete the timeout event
+            self.sim.cancel_event(self.timeout_event)
+            self.timeout_event = None
 
         # log packet
         self.logger.log_packet(event.get_source(), self, packet)
@@ -282,6 +288,9 @@ class Node(Module):
         proc = Event(self.sim.get_time() + proc_time, Events.END_PROC, self,
                      self)
         self.sim.schedule_event(proc)
+
+        self.current_pkt = None
+
         self.logger.log_state(self, Node.PROC)
         return Node.PROC
 
