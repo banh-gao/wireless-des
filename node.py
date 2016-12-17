@@ -82,6 +82,27 @@ class Node(Module):
         # microseconds
         self.timeout_time = self.maxsize * 8.0 / self.datarate + 10e-6
 
+        self.fsm = FSM(Node.IDLE, {
+            (Node.IDLE, Events.PACKET_ARRIVAL): self.testfsm,
+            (Node.IDLE, Events.START_RX): self.testfsm,
+            (Node.IDLE, Events.END_RX): self.testfsm,
+
+            (Node.RX, Events.PACKET_ARRIVAL): self.testfsm,
+            (Node.RX, Events.START_RX): self.testfsm,
+            (Node.RX, Events.END_RX): self.testfsm,
+            (Node.RX, Events.RX_TIMEOUT): self.testfsm,
+
+            (Node.PROC, Events.PACKET_ARRIVAL): self.testfsm,
+            (Node.PROC, Events.START_RX): self.testfsm,
+            (Node.PROC, Events.END_RX): self.testfsm,
+            (Node.PROC, Events.END_PROC): self.testfsm,
+
+            (Node.TX, Events.PACKET_ARRIVAL): self.testfsm,
+            (Node.TX, Events.START_RX): self.testfsm,
+            (Node.TX, Events.END_RX): self.testfsm,
+            (Node.TX, Events.END_TX): self.testfsm
+        })
+
     def initialize(self):
         """
         Initialization. Starts node operation by scheduling the first packet
@@ -324,3 +345,29 @@ class Node(Module):
 
     def is_channel_free(self):
         return self.packets_on_ch == 0
+
+
+class FSM:
+
+    def __init__(self, initialState, trans):
+        """
+        Maps from a state and event to and action callback to
+        execute. If the callback returns a state it becomes the new state.
+        (State, Event) -> (Action)
+        """
+        self.state = initialState
+        self.trans = trans
+
+    def handle_event(self, event):
+        key = (self.state, event)
+
+        if key not in self.trans.keys():
+            raise AssertionError("Unhandled event %s in state %s" %
+                                 (event, self.state))
+
+        action = self.trans[key]
+
+        self.state = action(self.state, event)
+
+        if(self.state is None):
+            raise Exception("Undefined next state for action %s" % action)
