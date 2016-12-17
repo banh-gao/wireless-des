@@ -12,16 +12,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright (C) 2016 Michele Segata <segata@ccs-labs.org>
+#                    Daniel Zozin <zdenial@gmx.com>
 
 import sys
 from module import Module
+from fsm import FSM
 from distribution import Distribution
 from event import Event
 from events import Events
 from packet import Packet
 
 
-class Node(Module):
+class Node(Module, FSM):
     """
     This class implements a node capable of communicating with other devices
     """
@@ -54,6 +56,29 @@ class Node(Module):
         :param y: y position
         """
         Module.__init__(self)
+
+        # Initialize the Finite State Machine with the transition table
+        FSM.__init__(self, Node.IDLE, {
+            (Node.IDLE, Events.PACKET_ARRIVAL): self.transmit_arrived,
+            (Node.IDLE, Events.START_RX): self.try_receiving,
+            (Node.IDLE, Events.END_RX): self.end_packet,
+
+            (Node.RX, Events.PACKET_ARRIVAL): self.enqueue_arrived,
+            (Node.RX, Events.START_RX): self.set_corrupted,
+            (Node.RX, Events.END_RX): self.end_receiving,
+            (Node.RX, Events.RX_TIMEOUT): self.switch_to_proc,
+
+            (Node.PROC, Events.PACKET_ARRIVAL): self.enqueue_arrived,
+            (Node.PROC, Events.START_RX): self.set_corrupted,
+            (Node.PROC, Events.END_RX): self.end_packet,
+            (Node.PROC, Events.END_PROC): self.resume_operations,
+
+            (Node.TX, Events.PACKET_ARRIVAL): self.enqueue_arrived,
+            (Node.TX, Events.START_RX): self.set_corrupted,
+            (Node.TX, Events.END_RX): self.end_packet,
+            (Node.TX, Events.END_TX): self.switch_to_proc
+        })
+
         # load configuration parameters
         self.datarate = config.get_param(Node.DATARATE)
         self.queue_size = config.get_param(Node.QUEUE)
@@ -82,27 +107,6 @@ class Node(Module):
         # microseconds
         self.timeout_time = self.maxsize * 8.0 / self.datarate + 10e-6
 
-        self.fsm = FSM(Node.IDLE, {
-            (Node.IDLE, Events.PACKET_ARRIVAL): self.transmit_arrived,
-            (Node.IDLE, Events.START_RX): self.try_receiving,
-            (Node.IDLE, Events.END_RX): self.end_packet,
-
-            (Node.RX, Events.PACKET_ARRIVAL): self.enqueue_arrived,
-            (Node.RX, Events.START_RX): self.set_corrupted,
-            (Node.RX, Events.END_RX): self.end_receiving,
-            (Node.RX, Events.RX_TIMEOUT): self.switch_to_proc,
-
-            (Node.PROC, Events.PACKET_ARRIVAL): self.enqueue_arrived,
-            (Node.PROC, Events.START_RX): self.set_corrupted,
-            (Node.PROC, Events.END_RX): self.end_packet,
-            (Node.PROC, Events.END_PROC): self.resume_operations,
-
-            (Node.TX, Events.PACKET_ARRIVAL): self.enqueue_arrived,
-            (Node.TX, Events.START_RX): self.set_corrupted,
-            (Node.TX, Events.END_RX): self.end_packet,
-            (Node.TX, Events.END_TX): self.switch_to_proc
-        })
-
     def initialize(self):
         """
         Initialization. Starts node operation by scheduling the first packet
@@ -110,12 +114,7 @@ class Node(Module):
         self.schedule_next_arrival()
 
     def handle_event(self, event):
-        """
-        Handles events notified to the node
-        :param event: the event
-        """
-
-        self.fsm.handle_event(event)
+        FSM.handle_event(self, event)
 
     def schedule_next_arrival(self):
         """
@@ -298,31 +297,3 @@ class Node(Module):
 
     def remove_detected_packet(self):
         self.packets_on_ch = self.packets_on_ch - 1
-
-
-class FSM:
-
-    def __init__(self, initialState, trans):
-        """
-        Maps from a state and event to and action callback to
-        execute. If the callback returns a state it becomes the new state.
-        (State, Event) -> (Action)
-        """
-        self.state = initialState
-        self.trans = trans
-
-    def handle_event(self, event):
-        key = (self.state, event.get_type())
-
-        if key not in self.trans.keys():
-            raise AssertionError("Unhandled event %s in state %s" %
-                                 (event.get_type(), self.state))
-
-        action = self.trans[key]
-
-        nextState = action(event)
-
-        if(nextState is not None):
-            self.state = nextState
-
-        return self.state
