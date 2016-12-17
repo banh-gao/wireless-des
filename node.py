@@ -249,20 +249,19 @@ class Node(Module):
         Handles the end of a reception
         :param event: the END_RX event
         """
-        packet = event.get_obj()
-
-        nextS = self.state
 
         self.packets_on_ch = self.packets_on_ch - 1
 
-        # if the packet that ends is the one that we are trying to receive, but
-        # we are not in the RX state, then something is very wrong
-        if self.current_pkt is not None and \
-           packet.get_id() == self.current_pkt.get_id():
-            assert(self.state == Node.RX)
+        if(self.state == Node.RX):
+            return self.end_receiving(event)
+        else:
+            return self.state
 
-        if self.state == Node.RX:
-            if packet.get_state() == Packet.PKT_RECEIVING:
+    def end_receiving(self, event):
+
+        packet = event.get_obj()
+
+        if packet.get_state() == Packet.PKT_RECEIVING:
                 # the packet is not in a corrupted state: we succesfully
                 # received it
                 packet.set_state(Packet.PKT_RECEIVED)
@@ -270,15 +269,13 @@ class Node(Module):
                 # were trying to decode
                 assert(packet.get_id() == self.current_pkt.get_id())
 
-            nextS = self.switch_to_proc()
-            # delete the timeout event
-            self.sim.cancel_event(self.timeout_event)
-            self.timeout_event = None
+        # delete the timeout event
+        self.sim.cancel_event(self.timeout_event)
+        self.timeout_event = None
 
-        # log packet
         self.logger.log_packet(event.get_source(), self, packet)
 
-        return nextS
+        return self.switch_to_proc()
 
     def switch_to_proc(self):
         """
