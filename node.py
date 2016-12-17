@@ -85,21 +85,21 @@ class Node(Module):
         self.fsm = FSM(Node.IDLE, {
             (Node.IDLE, Events.PACKET_ARRIVAL): self.transmit_arrived,
             (Node.IDLE, Events.START_RX): self.try_receiving,
-            (Node.IDLE, Events.END_RX): self.testfsm,
+            (Node.IDLE, Events.END_RX): self.remove_detected_packet,
 
             (Node.RX, Events.PACKET_ARRIVAL): self.enqueue_arrived,
             (Node.RX, Events.START_RX): self.set_corrupted,
-            (Node.RX, Events.END_RX): self.testfsm,
+            (Node.RX, Events.END_RX): self.end_receiving,
             (Node.RX, Events.RX_TIMEOUT): self.testfsm,
 
             (Node.PROC, Events.PACKET_ARRIVAL): self.enqueue_arrived,
             (Node.PROC, Events.START_RX): self.set_corrupted,
-            (Node.PROC, Events.END_RX): self.testfsm,
+            (Node.PROC, Events.END_RX): self.remove_detected_packet,
             (Node.PROC, Events.END_PROC): self.testfsm,
 
             (Node.TX, Events.PACKET_ARRIVAL): self.enqueue_arrived,
             (Node.TX, Events.START_RX): self.set_corrupted,
-            (Node.TX, Events.END_RX): self.testfsm,
+            (Node.TX, Events.END_RX): self.remove_detected_packet,
             (Node.TX, Events.END_TX): self.testfsm
         })
 
@@ -222,7 +222,7 @@ class Node(Module):
             new_packet.set_state(Packet.PKT_CORRUPTED)
 
         # count this as currently being received
-        self.packets_on_ch = self.packets_on_ch + 1
+        self.add_detected_packet()
 
         return nextS
 
@@ -240,7 +240,7 @@ class Node(Module):
             new_packet.set_state(Packet.PKT_CORRUPTED)
 
         # count this as currently being received
-        self.packets_on_ch = self.packets_on_ch + 1
+        self.add_detected_packet()
 
         return self.state
 
@@ -250,14 +250,14 @@ class Node(Module):
         :param event: the END_RX event
         """
 
-        self.packets_on_ch = self.packets_on_ch - 1
-
         if(self.state == Node.RX):
             return self.end_receiving(event)
         else:
+            self.remove_detected_packet()
             return self.state
 
     def end_receiving(self, event):
+        self.remove_detected_packet()
 
         packet = event.get_obj()
 
@@ -373,6 +373,12 @@ class Node(Module):
 
     def is_channel_free(self):
         return self.packets_on_ch == 0
+
+    def add_detected_packet(self):
+        self.packets_on_ch = self.packets_on_ch + 1
+
+    def remove_detected_packet(self):
+        self.packets_on_ch = self.packets_on_ch - 1
 
 
 class FSM:
