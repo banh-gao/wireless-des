@@ -73,8 +73,8 @@ class Node(Module):
         self.channel = channel
         # current packet being either sent or received
         self.current_pkt = None
-        # count the number of frames currently under reception
-        self.receiving_count = 0
+        # count packets currently detected on channel
+        self.packets_on_ch = 0
         # timeout event used to avoid being stuck in the RX state
         self.timeout_event = None
         # timeout time for the rx timeout event. set as the time needed to
@@ -157,7 +157,7 @@ class Node(Module):
         """
         new_packet = event.get_obj()
         if self.state == Node.IDLE:
-            if self.receiving_count == 0:
+            if self.is_channel_free():
                 # node is idle: it will try to receive this packet
                 assert(self.current_pkt is None)
                 new_packet.set_state(Packet.PKT_RECEIVING)
@@ -191,8 +191,9 @@ class Node(Module):
         end_rx = Event(self.sim.get_time() + new_packet.get_duration(),
                        Events.END_RX, self, self, new_packet)
         self.sim.schedule_event(end_rx)
+
         # count this as currently being received
-        self.receiving_count = self.receiving_count + 1
+        self.packets_on_ch = self.packets_on_ch + 1
 
     def handle_end_rx(self, event):
         """
@@ -200,6 +201,9 @@ class Node(Module):
         :param event: the END_RX event
         """
         packet = event.get_obj()
+
+        self.packets_on_ch = self.packets_on_ch - 1
+
         # if the packet that ends is the one that we are trying to receive, but
         # we are not in the RX state, then something is very wrong
         if self.current_pkt is not None and \
@@ -221,14 +225,14 @@ class Node(Module):
             if self.current_pkt is not None and \
                packet.get_id() == self.current_pkt.get_id():
                 self.current_pkt = None
-            if self.receiving_count == 1:
+            if self.is_channel_free():
                 # this is the only frame currently in the air, move to PROC
                 # before restarting operations
                 self.switch_to_proc()
                 # delete the timeout event
                 self.sim.cancel_event(self.timeout_event)
                 self.timeout_event = None
-        self.receiving_count = self.receiving_count - 1
+
         # log packet
         self.logger.log_packet(event.get_source(), self, packet)
 
@@ -317,3 +321,6 @@ class Node(Module):
         :returns: y position in meters
         """
         return self.y
+
+    def is_channel_free(self):
+        return self.packets_on_ch == 0
