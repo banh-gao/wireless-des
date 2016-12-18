@@ -38,7 +38,7 @@
 		// processing time after end of reception or transmission before starting operations again
 		"processing" : {"distribution" : "const", "mean" : 0.000001},
 		// position of nodes, list of x,y pairs
-	    "nodes" : [
+	    "nodes" : [[
                 [ 12.000000,  1.885714],
                 [ 15.371429,  1.685714],
                 [ 15.057143,  6.342857],
@@ -49,7 +49,7 @@
                 [ 26.000000,  4.371429],
                 [ 6.428571,  2.714286],
                 [ 12.914286,  10.342857]
-		],
+		]],
 		// log file name using configuration parameters
 		"output" : "output_{interarrival.lambda}_{seed}.csv"
 	}
