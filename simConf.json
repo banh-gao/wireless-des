@@ -1,7 +1,7 @@
 {
 	"simulation" : {
 		// seed(s) to initialize PRNGs
-		"seed" : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+	    "seed" : [0, 1, 2, 3, 4, 5],
 		// duration of each simulation in seconds
 		"duration" : 30,
 		// communication range in meters
@@ -17,31 +17,18 @@
 			{"distribution" : "exp", "lambda" : 110},
 			{"distribution" : "exp", "lambda" : 160},
 			{"distribution" : "exp", "lambda" : 210},
-			{"distribution" : "exp", "lambda" : 260},
 			{"distribution" : "exp", "lambda" : 310},
-			{"distribution" : "exp", "lambda" : 360},
 			{"distribution" : "exp", "lambda" : 410},
-			{"distribution" : "exp", "lambda" : 460},
 			{"distribution" : "exp", "lambda" : 510},
-			{"distribution" : "exp", "lambda" : 560},
 			{"distribution" : "exp", "lambda" : 610},
-			{"distribution" : "exp", "lambda" : 660},
 			{"distribution" : "exp", "lambda" : 710},
-			{"distribution" : "exp", "lambda" : 760},
 			{"distribution" : "exp", "lambda" : 810},
-			{"distribution" : "exp", "lambda" : 860},
 			{"distribution" : "exp", "lambda" : 910},
-			{"distribution" : "exp", "lambda" : 960},
 			{"distribution" : "exp", "lambda" : 1010},
-			{"distribution" : "exp", "lambda" : 1060},
 			{"distribution" : "exp", "lambda" : 1110},
-			{"distribution" : "exp", "lambda" : 1160},
 			{"distribution" : "exp", "lambda" : 1210},
-			{"distribution" : "exp", "lambda" : 1260},
 			{"distribution" : "exp", "lambda" : 1310},
-			{"distribution" : "exp", "lambda" : 1360},
 			{"distribution" : "exp", "lambda" : 1410},
-			{"distribution" : "exp", "lambda" : 1460},
 			{"distribution" : "exp", "lambda" : 1510}
 		],
 		// packet size distribution in bytes
