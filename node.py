@@ -48,7 +48,7 @@ class Node(FSMNode):
             # Try transmitting when a new packed is enqueued
             # or when a packet in the air terminates
             (Node.IDLE, Events.PACKET_ARRIVAL): self.try_transmitting,
-            (Node.SENSE, Events.END_RX): self.try_transmitting,
+            (Node.SENSE, Events.END_RX): self.retry_transmitting,
 
             # Try receiving a packet in the air
             (Node.IDLE, Events.START_RX): self.try_receiving,
@@ -100,6 +100,11 @@ class Node(FSMNode):
 
         self.transmit()
         return Node.TX
+
+    def retry_transmitting(self, event=None):
+        self.remove_detected_packet()
+
+        return self.try_transmitting()
 
     def try_receiving(self, event):
         was_channel_free = self.is_channel_free()
@@ -171,6 +176,7 @@ class Node(FSMNode):
     def end_packet(self, event):
         # count packet not in the channel anymore and stay in the same state
         self.remove_detected_packet()
+
         return FSMNode.STAY
 
     def switch_to_proc(self, event):
@@ -188,9 +194,9 @@ class Node(FSMNode):
         """
         Handles the end of the processing period, resuming operations
         """
-
         if len(self.queue) == 0:
-            # resuming operations but nothing to transmit. back to IDLE
+            # resuming operations but nothing to transmit. back to
+            # IDLE
             return Node.IDLE
         else:
             # there is a packet ready in the queue, try transmitting it
