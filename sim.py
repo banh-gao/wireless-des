@@ -80,7 +80,7 @@ class Sim:
         """
         if self.config_file == "" or self.section == "":
             sys.stderr.write("Configuration error. Call set_config() before "
-                             "get_runs_count()")
+                             "get_runs_count()\n")
             sys.exit(1)
         return self.config.get_runs_count()
 
@@ -90,15 +90,15 @@ class Sim:
         :param run_number: the index of the simulation to be run
         """
         if self.config_file == "" or self.section == "":
-            sys.stderr.write("Configuration error. Call set_config()"
-                             "before initialize()")
+            sys.stderr.write("Configuration error. Call set_config() "
+                             "before initialize()\n")
             sys.exit(1)
         # set and check run number
         self.run_number = run_number
         if run_number >= self.config.get_runs_count():
             sys.stderr.write("Simulation error. Run number %d does not exist. "
                              "Please run the simulator with the --list option "
-                             "to list all possible runs" % run_number)
+                             "to list all possible runs\n" % run_number)
             sys.exit(1)
         self.config.set_run_number(run_number)
         # instantiate data logger
@@ -172,7 +172,7 @@ class Sim:
             self.queue.remove((event.get_time(), event))
             heapq.heapify(self.queue)
         except ValueError:
-            sys.stderr.write("Trying to delete an event that does not exist.")
+            sys.stderr.write("Trying to delete an event that does not exist.\n")
             sys.exit(1)
 
     def run(self):
@@ -182,7 +182,7 @@ class Sim:
         # first check that everything is ready
         if not self.initialized:
             sys.stderr.write("Cannot run the simulation. "
-                             "Call initialize() first")
+                             "Call initialize() first\n")
             sys.exit(1)
         # save the time at which the simulation started,
         # for statistical purpose

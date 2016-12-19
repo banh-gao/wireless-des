@@ -42,12 +42,12 @@ class Config:
         try:
             self.cfg = json.loads(json_content)
         except Exception as e:
-            sys.stderr.write("Unable to parse " + self.config_file)
-            sys.stderr.write(e.message)
+            sys.stderr.write("Unable to parse %s\n" % self.config_file)
+            sys.stderr.write(e.message + "\n")
             sys.exit(1)
         if section not in self.cfg:
-            sys.stderr.write("Error: the file %s does not contain section %s",
-                  (config_file, section))
+            sys.stderr.write("Error: the file %s does not contain section %s\n"
+                             % (config_file, section))
             sys.exit(1)
         # create the mapping between run numbers and parameters
         self.map_parameters()
@@ -153,8 +153,8 @@ class Config:
             else:
                 return self.cfg[self.section][param]
         else:
-            sys.stderr.write("Error: parameter %s not found in section %s",
-                  (param, self.section))
+            sys.stderr.write("Error: parameter %s not found in section %s\n",
+                             (param, self.section))
             sys.exit(1)
 
     def compute_output_file_name(self):
@@ -198,7 +198,7 @@ class Config:
                     var_name = ""
                 else:
                     # if not, there is a syntax error like {{
-                    sys.stderr.write("Invalid syntax for %s" % template)
+                    sys.stderr.write("Invalid syntax for %s\n" % template)
                     sys.exit(1)
             elif template[i] == '}':
                 # if the character is }, then this is the end of a variable name
@@ -238,7 +238,7 @@ class Config:
                 else:
                     # if we are not in the INVAR state, then we have a syntax
                     # error like }}
-                    sys.stderr.write("Invalid syntax for %s" % template)
+                    sys.stderr.write("Invalid syntax for %s\n" % template)
                     sys.exit(1)
             else:
                 # this is neither a { nor a }. so it's a standard character
@@ -252,7 +252,7 @@ class Config:
         if state == INVAR:
             # if we are not in the OUTVAR state at the end of the template,
             # then there is a syntax error
-            sys.stderr.write("Invalid syntax for %s" % template)
+            sys.stderr.write("Invalid syntax for %s\n" % template)
             sys.exit(1)
 
         self.output_file = output
