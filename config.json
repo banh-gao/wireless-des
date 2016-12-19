@@ -1,7 +1,7 @@
 {
 	"simulation" : {
 		// seed(s) to initialize PRNGs
-	    "seed" : [0, 1, 2],
+	    "seed" : [0],
 		// duration of each simulation in seconds
 		"duration" : 30,
 		// communication range in meters
@@ -56,7 +56,7 @@
 
     	"test" : {
 		// seed(s) to initialize PRNGs
-		"seed" : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+		"seed" : [0, 1],
 		// duration of each simulation in seconds
 		"duration" : 30,
 		// communication range in meters
