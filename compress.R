@@ -2,8 +2,10 @@
 args <- commandArgs(trailingOnly = T)
 if (length(args) != 0) {
     res.folder <- args[1]
+    out.folder <- args[2]
 } else {
     res.folder <- './'
+    out.folder <- './'
 }
 
 # determine whether a string contains a parsable number"
@@ -39,7 +41,7 @@ get.params <- function(filename, fields) {
 }
 
 ## load all csv files into a single one
-aggregated.file <- paste(res.folder, 'alld.Rdata', sep='/')
+aggregated.file <- paste(out.folder, 'alld.Rdata', sep='/')
 
 alld <- data.frame()
 

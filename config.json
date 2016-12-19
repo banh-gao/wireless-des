@@ -51,7 +51,7 @@
                 [ 12.914286,  10.342857]
 		]],
 		// log file name using configuration parameters
-		"output" : "output_{interarrival.lambda}_{seed}.csv"
+		"output" : "/tmp/output_{interarrival.lambda}_{seed}.csv"
 	},
 
     	"test" : {
@@ -97,6 +97,6 @@
 			[[1,1], [2,3], [0, 0]]
 		],
 		// log file name using configuration parameters
-		"output" : "output_{interarrival.lambda}_{seed}.csv"
+		"output" : "/tmp/test_output_{interarrival.lambda}_{seed}.csv"
 	}
 }

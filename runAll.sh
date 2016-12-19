@@ -1,6 +1,10 @@
 #!/bin/bash
 
+RES_DIR=/tmp
+OUT_DIR="$( pwd )"
+
 PIDs=()
+SRC_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Setup proper cleanup
 cleanup() {
@@ -14,7 +18,7 @@ cleanup() {
 trap cleanup HUP INT QUIT KILL PIPE TERM
 
 if [ $# -ne 2 ]; then
-    echo "usage: $0 confSection maxSimulation"
+    echo "usage: $0 confFile maxSimulation"
     exit 0
 fi
 
@@ -22,7 +26,7 @@ max=$2
 
 for i in $(seq 0 $max); do
     echo "Starting simulation #$i ..."
-    ./main.py -c config.json -s $1 -r $i 1> "sim_$i.log" &
+    $SRC_DIR/main.py -c $1 -r $i 1> "$RES_DIR/sim_$i.log" &
     PIDs[$i]=$!
 done
 
@@ -42,9 +46,8 @@ for pid in "${PIDs[@]}"; do
 done
 
 echo "Compressing results ..."
-R --no-save < compress.R 1> /dev/null
-
+Rscript --vanilla $SRC_DIR/compress.R $RES_DIR $OUT_DIR 1> /dev/null
 echo "Cleaning up temp files ..."
-rm output_*.csv
+rm $RES_DIR/output_*.csv
 
-echo "Results saved in alld.Rdata"
+echo "Results saved in $OUT_DIR/alld.Rdata"
