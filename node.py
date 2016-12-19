@@ -46,21 +46,19 @@ class Node(FSMNode):
         # Initialize the Finite State Machine with the transition table
         self.set_transitions(Node.IDLE, {
             # Try transmitting when a new packed is enqueued
-            # or when a packet in the air terminates
             (Node.IDLE, Events.PACKET_ARRIVAL): self.try_transmitting,
-            (Node.SENSE, Events.END_RX): self.retry_transmitting,
-
-            # Try receiving a packet in the air
-            (Node.IDLE, Events.START_RX): self.try_receiving,
-
-            # Set the receiving packet as corrupted by another one
-            (Node.RX, Events.START_RX): self.corrupt_reception,
 
             # The node is busy, do nothing with the newly enqueue packet
             (Node.RX, Events.PACKET_ARRIVAL): self.stay,
             (Node.PROC, Events.PACKET_ARRIVAL): self.stay,
             (Node.TX, Events.PACKET_ARRIVAL): self.stay,
             (Node.SENSE, Events.PACKET_ARRIVAL): self.stay,
+
+            # Try receiving a packet in the air
+            (Node.IDLE, Events.START_RX): self.try_receiving,
+
+            # Set the receiving packet as corrupted by another one
+            (Node.RX, Events.START_RX): self.corrupt_reception,
 
             # The node is busy, new packets detected in the air are dropped
             (Node.PROC, Events.START_RX): self.drop_receiving,
@@ -73,11 +71,14 @@ class Node(FSMNode):
             (Node.PROC, Events.END_RX): self.end_packet,
             (Node.TX, Events.END_RX): self.end_packet,
 
-            # Start processing after transmission
-            (Node.TX, Events.END_TX): self.switch_to_proc,
+            # Retry transmitting when a packet in the air terminates
+            (Node.SENSE, Events.END_RX): self.retry_transmitting,
 
             # Start processing after reception
             (Node.RX, Events.END_RX): self.end_receiving,
+
+            # Start processing after transmission
+            (Node.TX, Events.END_TX): self.switch_to_proc,
 
             # Resume after processing terminates
             (Node.PROC, Events.END_PROC): self.resume_operations
@@ -102,7 +103,7 @@ class Node(FSMNode):
         return Node.TX
 
     def retry_transmitting(self, event=None):
-        self.remove_detected_packet()
+        self.sense_packet_end()
 
         return self.try_transmitting()
 
@@ -110,7 +111,7 @@ class Node(FSMNode):
         was_channel_free = self.is_channel_free()
 
         # count new packet in the channel
-        self.add_detected_packet()
+        self.sense_packet_start()
 
         new_packet = event.get_obj()
 
@@ -127,7 +128,7 @@ class Node(FSMNode):
 
     def corrupt_reception(self, event):
         # count new packet in the channel
-        self.add_detected_packet()
+        self.sense_packet_start()
 
         # the packet we are currently receiving is corrupted by a
         # collision with the new packet
@@ -142,7 +143,7 @@ class Node(FSMNode):
 
     def drop_receiving(self, event):
         # count new packet in the channel
-        self.add_detected_packet()
+        self.sense_packet_start()
 
         # If the node is not in IDLE or RX, it is not able to decode a new
         # packet so just ignore it and remain in same state
@@ -150,7 +151,7 @@ class Node(FSMNode):
 
     def end_receiving(self, event):
         # count packet not in the channel anymore
-        self.remove_detected_packet()
+        self.sense_packet_end()
 
         packet = event.get_obj()
 
@@ -175,7 +176,7 @@ class Node(FSMNode):
 
     def end_packet(self, event):
         # count packet not in the channel anymore and stay in the same state
-        self.remove_detected_packet()
+        self.sense_packet_end()
 
         return FSMNode.STAY
 
@@ -205,8 +206,8 @@ class Node(FSMNode):
     def is_channel_free(self):
         return self.packets_on_ch == 0
 
-    def add_detected_packet(self):
+    def sense_packet_start(self):
         self.packets_on_ch = self.packets_on_ch + 1
 
-    def remove_detected_packet(self):
+    def sense_packet_end(self):
         self.packets_on_ch = self.packets_on_ch - 1
