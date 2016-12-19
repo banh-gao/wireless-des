@@ -128,26 +128,25 @@ sim.time <- max(alld$time)
 n.nodes <- length(unique(alld$src))
 
 # compute the statistics
-cr <- compute.collision.rate(alld)
+cr <- compute.collision.rate(alld, group=T)
 cr$ol <- offered.load(cr$lambda, n.nodes=n.nodes)
-dr <- compute.drop.rate(alld)
+dr <- compute.drop.rate(alld, group=T)
 dr$ol <- offered.load(dr$lambda, n.nodes=n.nodes)
-tr <- compute.throughput(alld, 8e6, sim.time)
+tr <- compute.throughput(alld, 8e6, sim.time, group=T)
 tr$ol <- offered.load(tr$lambda, n.nodes=n.nodes)
 
 # and plot the results
 div <- 3
-p <- ggplot(tr, aes(x=ol, y=tr, color=factor(dst))) +
+p <- ggplot(tr, aes(x=ol, y=tr)) +
      geom_line() +
      geom_point() +
      xlab('total offered load (Mbps)') +
      ylab('throughput at receiver (Mbps)') +
-     labs(color="receiver node") +
-     ylim(c(0, 3))
+     labs(color="receiver node")
 ggsave(paste(res.folder, '/thr_', n.nodes, '.pdf', sep=''), width=16/div, height=9/div)
 print(p)
 
-pcr <- ggplot(cr, aes(x=ol, y=cr, color=factor(dst))) +
+pcr <- ggplot(cr, aes(x=ol, y=cr)) +
        geom_line() +
        geom_point() +
        xlab('total offered load (Mbps)') +
@@ -157,7 +156,7 @@ pcr <- ggplot(cr, aes(x=ol, y=cr, color=factor(dst))) +
 ggsave(paste(res.folder, '/pcr_', n.nodes, '.pdf', sep=''), width=16/div, height=9/div)
 print(pcr)
 
-pdr <- ggplot(dr, aes(x=ol, y=dr, color=factor(src))) +
+pdr <- ggplot(dr, aes(x=ol, y=dr)) +
        geom_line() +
        geom_point() +
        xlab('total offered load (Mbps)') +
