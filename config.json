@@ -52,7 +52,7 @@
 		]],
 		// log file name using configuration parameters
 		"output" : "output_{interarrival.lambda}_{seed}.csv"
-	}
+	},
 
     	"test" : {
 		// seed(s) to initialize PRNGs
