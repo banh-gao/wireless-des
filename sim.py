@@ -34,8 +34,8 @@ class Sim:
     Main simulator class
     """
 
-    # name of the section in the configuration file that includes all simulation
-    # parameters
+    # name of the section in the configuration file that includes all
+    # simulation parameters
     PAR_SECTION = "Simulation"
     # simulation duration parameter
     PAR_DURATION = "duration"
@@ -79,8 +79,8 @@ class Sim:
         :returs: the total number of runs
         """
         if self.config_file == "" or self.section == "":
-            print("Configuration error. Call set_config() before "
-                  "get_runs_count()")
+            sys.stderr.write("Configuration error. Call set_config() before "
+                             "get_runs_count()")
             sys.exit(1)
         return self.config.get_runs_count()
 
@@ -90,14 +90,15 @@ class Sim:
         :param run_number: the index of the simulation to be run
         """
         if self.config_file == "" or self.section == "":
-            print("Configuration error. Call set_config() before initialize()")
+            sys.stderr.write("Configuration error. Call set_config()"
+                             "before initialize()")
             sys.exit(1)
         # set and check run number
         self.run_number = run_number
         if run_number >= self.config.get_runs_count():
-            print("Simulation error. Run number %d does not exist. Please run "
-                  "the simulator with the --list option to list all possible "
-                  "runs" % run_number)
+            sys.stderr.write("Simulation error. Run number %d does not exist. "
+                             "Please run the simulator with the --list option "
+                             "to list all possible runs" % run_number)
             sys.exit(1)
         self.config.set_run_number(run_number)
         # instantiate data logger
@@ -140,12 +141,13 @@ class Sim:
         :param event: the event to schedule
         """
         if event.get_time() < self.time:
-            print("Schedule error: Module with id %d of type %s is trying to "
-                  "schedule an event in the past. Current time = %f, schedule "
-                  "time = %f", (event.get_source.get_id(),
-                                event.get_source.get_type(),
-                                self.time,
-                                event.get_time()))
+            sys.stderr.write("Schedule error: Module with id %d of type %s is "
+                             "trying to schedule an event in the past. Current"
+                             " time = %f, schedule time = %f",
+                             (event.get_source.get_id(),
+                              event.get_source.get_type(),
+                              self.time,
+                              event.get_time()))
             sys.exit(1)
         heapq.heappush(self.queue, (event.get_time(), event))
 
@@ -170,7 +172,7 @@ class Sim:
             self.queue.remove((event.get_time(), event))
             heapq.heapify(self.queue)
         except ValueError:
-            print("Trying to delete an event that does not exist.")
+            sys.stderr.write("Trying to delete an event that does not exist.")
             sys.exit(1)
 
     def run(self):
@@ -179,9 +181,11 @@ class Sim:
         """
         # first check that everything is ready
         if not self.initialized:
-            print("Cannot run the simulation. Call initialize() first")
+            sys.stderr.write("Cannot run the simulation. "
+                             "Call initialize() first")
             sys.exit(1)
-        # save the time at which the simulation started, for statistical purpose
+        # save the time at which the simulation started,
+        # for statistical purpose
         start_time = time.time()
         # last time we printed the simulation percentage
         prev_time = start_time

@@ -42,11 +42,11 @@ class Config:
         try:
             self.cfg = json.loads(json_content)
         except Exception as e:
-            print("Unable to parse " + self.config_file)
-            print(e.message)
+            sys.stderr.write("Unable to parse " + self.config_file)
+            sys.stderr.write(e.message)
             sys.exit(1)
         if section not in self.cfg:
-            print("Error: the file %s does not contain section %s",
+            sys.stderr.write("Error: the file %s does not contain section %s",
                   (config_file, section))
             sys.exit(1)
         # create the mapping between run numbers and parameters
@@ -153,7 +153,7 @@ class Config:
             else:
                 return self.cfg[self.section][param]
         else:
-            print("Error: parameter %s not found in section %s",
+            sys.stderr.write("Error: parameter %s not found in section %s",
                   (param, self.section))
             sys.exit(1)
 
@@ -198,7 +198,7 @@ class Config:
                     var_name = ""
                 else:
                     # if not, there is a syntax error like {{
-                    print("Invalid syntax for %s" % template)
+                    sys.stderr.write("Invalid syntax for %s" % template)
                     sys.exit(1)
             elif template[i] == '}':
                 # if the character is }, then this is the end of a variable name
@@ -238,7 +238,7 @@ class Config:
                 else:
                     # if we are not in the INVAR state, then we have a syntax
                     # error like }}
-                    print("Invalid syntax for %s" % template)
+                    sys.stderr.write("Invalid syntax for %s" % template)
                     sys.exit(1)
             else:
                 # this is neither a { nor a }. so it's a standard character
@@ -252,7 +252,7 @@ class Config:
         if state == INVAR:
             # if we are not in the OUTVAR state at the end of the template,
             # then there is a syntax error
-            print("Invalid syntax for %s" % template)
+            sys.stderr.write("Invalid syntax for %s" % template)
             sys.exit(1)
 
         self.output_file = output
