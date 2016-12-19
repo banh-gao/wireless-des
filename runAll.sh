@@ -14,11 +14,16 @@ cleanup() {
 
 trap cleanup HUP INT QUIT KILL PIPE TERM
 
+if [ $# -ne 2 ]; then
+    echo "usage: $0 confSection maxSimulation"
+    exit 1
+fi
+
 max=$2
 
 echo "Running $((max + 1)) simulations (from #0 to #$max) ..."
 for i in $(seq 0 $max); do
-    ./main.py -c $1 -r $i > "sim_$i.log" &
+    ./main.py -c config.json -s $1 -r $i 1> "sim_$i.log" &
     PIDs[$i]=$!
 done
 
