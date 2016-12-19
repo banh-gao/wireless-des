@@ -18,38 +18,6 @@ PKT_CORRUPTED = 2
 PKT_GENERATED = 3
 PKT_QUEUE_DROPPED = 4
 
-# determine whether a string contains a parsable number"
-is.number <- function(string) {
-    if (length(grep("^[[:digit:]]*$", string)) == 1)
-        return (T)
-    else
-        return (F)
-}
-
-# gets the list of files with a certain prefix and suffix in a folder
-get.data.files <- function(folder, suffix=".csv") {
-    if (strsplit(suffix, '')[[1]][1] == '.')
-        suffix <- paste('\\', suffix, sep='')
-    return(list.files(folder, pattern=paste('.*', suffix, sep='')))
-}
-
-# splits the name of an output file by _ and extracts the values of simulation parameters
-get.params <- function(filename, fields) {
-    p <- strsplit(gsub(".csv", "", basename(filename)), "_")[[1]]
-    #to add a column, we need to have something in the dataframe, so we add a
-    #fake column which we remove at the end
-    d <- data.frame(todelete=1)
-    for (f in 1:length(fields)) {
-        v <- p[f]
-        if (is.number(v))
-            d[[fields[[f]]]] <- as.numeric(v)
-        else
-            d[[fields[[f]]]] <- v
-    }
-    d$todelete <- NULL
-    return (d)
-}
-
 # computes the offered load
 compute.offered.load <- function(d, data.rate, sim.time) {
     # keep generation events only
@@ -103,25 +71,9 @@ offered.load <- function(lambda, n.nodes, packet.size=(1460+32)/2) {
     lambda*n.nodes*packet.size*8/1024/1024
 }
 
-# if there is no aggregated file, load all csv files into a single one
 aggregated.file <- paste(res.folder, 'alld.Rdata', sep='/')
-if (!file.exists(aggregated.file)) {
-    alld <- data.frame()
-    # find all csv in current folder
-    data.files <- get.data.files(res.folder, '.csv')
-    for (f in data.files) {
-        full.path <- paste(res.folder, f, sep='/')
-        print(full.path)
-        pars <- get.params(full.path, c('prefix', 'lambda', 'seed'))
-        d <- read.csv(full.path)
-        d <- cbind(d, pars)
-        alld <- rbind(d, alld)
-    }
-    save(alld, file=aggregated.file)
-} else {
-    # otherwise simply load the aggregated file
-    load(aggregated.file)
-}
+
+load(aggregated.file)
 
 # get simulation time and number of nodes from the simulation data
 sim.time <- max(alld$time)
@@ -165,4 +117,3 @@ pdr <- ggplot(dr, aes(x=ol, y=dr)) +
        ylim(c(0, 1))
 ggsave(paste(res.folder, '/pdr_', n.nodes, '.pdf', sep=''), width=16/div, height=9/div)
 print(pdr)
-

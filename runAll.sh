@@ -32,18 +32,19 @@ for pid in "${PIDs[@]}"; do
 
     # Halt all if simulation failed
     if [ $? -ne 0 ]; then
-        echo "SIMULATION FAILURE DETECTED! Halting all ..."
+        echo "SIMULATION FAILURE DETECTED!"
         cleanup
         exit 1
     fi
 
-    remaining=$((max - $i))
-    if [ $remaining -ne 0 ]; then
-        echo "Simulation #$i ended. $remaining simulations still running ..."
-    else
-        echo "Simulation #$i ended."
-    fi
-    i=$((i+1))
+    echo "Simulation $((i + 1)) of $((max + 1)) ended"
+    i=$((i + 1))
 done
 
-echo "All $((max + 1)) simulations successfully ended."
+echo "Compressing results ..."
+R --no-save < compress.R 1> /dev/null
+
+echo "Cleaning up temp files ..."
+rm output_*.csv
+
+echo "Results saved in alld.Rdata"
