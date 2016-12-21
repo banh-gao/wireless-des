@@ -46,13 +46,13 @@ class Node(FSMNode):
         # Initialize the Finite State Machine with the transition table
         self.set_transitions(Node.IDLE, {
             # Try transmitting when a new packed is enqueued
-            (Node.IDLE, Events.PACKET_ARRIVAL): self.try_transmitting,
+            (Node.IDLE, Events.PACKET_ENQUEUED): self.try_transmitting,
 
-            # The node is busy, do nothing with the newly enqueue packet
-            (Node.RX, Events.PACKET_ARRIVAL): self.stay,
-            (Node.PROC, Events.PACKET_ARRIVAL): self.stay,
-            (Node.TX, Events.PACKET_ARRIVAL): self.stay,
-            (Node.SENSE, Events.PACKET_ARRIVAL): self.stay,
+            # The node is busy, do nothing with the newly enqueued packet
+            (Node.RX, Events.PACKET_ENQUEUED): self.stay,
+            (Node.PROC, Events.PACKET_ENQUEUED): self.stay,
+            (Node.TX, Events.PACKET_ENQUEUED): self.stay,
+            (Node.SENSE, Events.PACKET_ENQUEUED): self.stay,
 
             # Try receiving a packet in the air
             (Node.IDLE, Events.START_RX): self.try_receiving,

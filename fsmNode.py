@@ -117,6 +117,10 @@ class FSMNode(Module):
             # same state
             if(not self.enqueue_arrived(event)):
                 return
+            else:
+                event = Event(event.get_time(), Events.PACKET_ENQUEUED,
+                              event.get_destination(), event.get_source(),
+                              event.get_obj())
 
         key = (self.state, event.get_type())
 

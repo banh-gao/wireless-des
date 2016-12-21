@@ -27,10 +27,12 @@ class Events:
     START_RX = 2
     # end reception event
     END_RX = 3
-    # packet arrival event
+    # packed arrival event
     PACKET_ARRIVAL = 4
     # end of processing after reception or transmission. can start operations
     # again
     END_PROC = 5
     # timeout for RX state avoiding getting stuck into RX indefinitely
     RX_TIMEOUT = 6
+    # packed enqueued event
+    PACKET_ENQUEUED = 7
