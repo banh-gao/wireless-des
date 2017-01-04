@@ -31,9 +31,8 @@
   \node [decision, below of=rx, text width=5.5em, node distance=2.5cm] (sense) {is
     state SENSE \&\& ch free?};
 
-  \node [block, below of=sense, node distance=2.5cm] (tx) {dequeue
-    packet and transmit};
-  \node [block, below of=tx, node distance=2cm] (settx) {set state TX};
+  \node [block, below of=sense, node distance=2.5cm] (tx) {schedule end\_slot};
+  \node [block, below of=tx, node distance=2cm] (settx) {set state WAIT\_SLOT};
 
   \node [terminator, below of=iscurr, node distance=8.5cm] (end) {end};
 

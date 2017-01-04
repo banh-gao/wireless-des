@@ -29,11 +29,18 @@
   \node [block, below of=setcurr, node distance=2.5cm] (setrx) {set
     state RX};
 
-    \node [block, below of=rx, node distance=2.5cm] (coll) {set
+  \node [block, below of=rx, node distance=2.5cm] (coll) {set
       curr\_pkt corrupted};
-    \node [block, right of=coll, node distance=4cm] (corr) {set pkt corrupted};
+  \node [block, right of=coll, node distance=4cm] (corr) {set pkt
+     corrupted};
 
-  \node [terminator, below of=corr] (end) {end};
+  \node [decision, below of=coll, node distance=2.5cm] (slot) {is state
+      WAIT SLOT?};
+  \node [block, below of=slot, node distance=2.5cm] (cancslot) {cancel
+    end\_slot event};
+  \node [block, right of=cancslot, node distance=4cm] (setsense) {set
+    state SENSE};
+  \node [terminator, below of=setrx, node distance=8cm] (end) {end};
 
   % Draw edges
   \path [line] (init) -- (addrcv);
@@ -43,12 +50,16 @@
   \path [line] (idle) -- node [near start] {no} (rx);
   \path [line] (count) -- node [near start] {yes} (setcurr);
   \path [line] (count) -- node [near start] {no} (corr);
-  \path [line] (corr) -- (end);
+  \path [line] (corr) -| (end);
   \path [line] (setcurr) -- (setrx);
-  \path [line] (setrx) |- (end);
+  \path [line] (setrx) -- (end);
   \path [line] (rx) -- node [near start] {yes} (coll);
   \path [line] (coll) -- (corr);
-  \path [line] (rx.west) |- node [near start] {no} ++(-1cm,0) |-  (end);
+  \path [line] (slot) -- node [near start] {yes} (cancslot);
+  \path [line] (cancslot) -- (setsense);
+  \path [line] (slot.east) -| node [near start] {no} (end);
+  \path [line] (setsense) -- (end);
+  \path [line] (rx.west) |- node [near start, anchor=south east] {no} ++(-1cm,0) |- (slot);
 
 \end{tikzpicture}
 
