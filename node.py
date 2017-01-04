@@ -94,7 +94,6 @@ class Node(FSMNode):
         If the channel is not free go in SENSE state,
         otherwise start transmitting a packet (from the queue)
         """
-
         if(not self.is_channel_free()):
             return Node.SENSE
 
@@ -162,6 +161,8 @@ class Node(FSMNode):
 
             self.logger.log_packet(event.get_source(), self, packet)
 
+            self.current_rcv = None
+
             # End reception and process packet (Even though it was corrupted)
             return self.switch_to_proc(event)
 
@@ -183,7 +184,6 @@ class Node(FSMNode):
         """
         Switches to the processing state and schedules the end_proc event
         """
-
         proc_time = self.proc_time.get_value()
         proc = Event(self.sim.get_time() + proc_time, Events.END_PROC, self,
                      self)
