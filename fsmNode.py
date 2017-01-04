@@ -11,7 +11,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Copyright (C) 2016 Daniel Zozin <zdenial@gmx.com>
+# Copyright (C) 2016 Daniel Zozin <daniel.zozin@posteo.net>
 
 from module import Module
 from distribution import Distribution

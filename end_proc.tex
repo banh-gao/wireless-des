@@ -18,28 +18,26 @@
   \node [terminator] (init) {on end\_proc};
   \node [decision, below of=init, node distance=2.5cm] (queue) {is queue empty?};
   \node [decision, right of=queue, node distance=4cm] (count) {ch free?};
-  \node [block, right of=count, node distance=4cm] (settx) {set state
-    TX};
-  \node [block, below of=settx] (curpk) {current packet = dequeue()};
-  \node [block, below of=curpk] (tx) {tx current packet};
-  \node [block, below of=tx] (sched_tx) {schedule end\_tx};
-  \node [block, below of=count, node distance=4cm] (setsense) {set
+
+    \node [block, right of=count, node distance=4cm] (tx) {dequeue
+    packet and transmit};
+  \node [block, below of=tx, node distance=2.5cm] (settx) {set state TX};
+
+  \node [block, below of=count, node distance=2.5cm] (setsense) {set
     state SENSE};
-  \node [block, below of=queue, node distance=4cm] (setidle) {set state IDLE};
-  \node [terminator, below of=setsense, node distance=3.5cm] (end) {end};
+  \node [block, below of=queue, node distance=2.5cm] (setidle) {set state IDLE};
+  \node [terminator, below of=setsense, node distance=2.5cm] (end) {end};
 
   % Draw edges
   \path [line] (init) -- (queue);
   \path [line] (queue) -- node [near start] {yes} (setidle);
   \path [line] (queue) -- node [near start] {no} (count);
 
-
-  \path [line] (count) -- node [near start] {yes} (settx);
   \path [line] (count) -- node [near start] {no} (setsense);
-  \path [line] (settx) -- (curpk);
-  \path [line] (curpk) -- (tx);
-  \path [line] (tx) -- (sched_tx);
-  \path [line] (sched_tx) |- (end);
+
+  \path [line] (count) -- node [near start] {yes} (tx);
+  \path [line] (tx) -- (settx);
+  \path [line] (settx) |- (end);
 
   \path [line] (setsense) -- (end);
 

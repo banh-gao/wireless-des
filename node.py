@@ -11,8 +11,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Copyright (C) 2016 Michele Segata <segata@ccs-labs.org>
-#                    Daniel Zozin <zdenial@gmx.com>
+# Copyright (C) 2016 Daniel Zozin <daniel.zozin@posteo.net>
 
 
 from fsmNode import FSMNode
@@ -138,7 +137,7 @@ class Node(FSMNode):
         new_packet = event.get_obj()
         new_packet.set_state(Packet.PKT_CORRUPTED)
 
-        # Stay anyway in RX until the end event (RX Timeout event not needed)
+        # Stay anyway in RX until the end event
         return FSMNode.STAY
 
     def drop_receiving(self, event):
