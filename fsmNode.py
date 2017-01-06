@@ -19,6 +19,7 @@ from packet import Packet
 from event import Event
 from events import Events
 from channel import Channel
+import sim
 
 class FSMNode(Module):
     """
@@ -67,9 +68,12 @@ class FSMNode(Module):
         self.proc_time = Distribution(config.get_param(FSMNode.PROC_TIME))
         self.maxsize = config.get_param(FSMNode.MAXSIZE)
 
+        # a slot lasts the maximum time a packet would take to be transmitted
+        max_pkt_time = (self.maxsize * 8) / self.datarate
+        prop_delay = (config.get_param(Channel.PAR_RANGE)) / Channel.SOL
+        max_nodes_concurr = len(config.get_param("nodes")) * prop_delay
 
-        self.slot_duration = (self.maxsize * 8) / self.datarate \
-                             + (config.get_param(Channel.PAR_RANGE) * 2) / Channel.SOL
+        self.slot_duration = max_nodes_concurr + max_pkt_time
 
         # the slots distribution for a node
         self.slots = Distribution({"distribution" : "unif",
