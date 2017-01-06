@@ -9,7 +9,7 @@
         // physical layer datarate in bits per second
         "datarate" : 8000000,
         // packet queue size. set to 0 for infinity
-        "queue" : 2,
+        "queue" : 1,
         // packet inter-arrival distribution in 1/seconds
         "interarrival" : [
             {"distribution" : "exp", "lambda" : 10},
@@ -35,10 +35,11 @@
         // packet size distribution in bytes
         "size" : {"distribution" : "unif", "min" : 32, "max" : 1460, "int" : 1},
         // maximum packet size in bytes to compute the RX timeout
-        "maxsize" : 1460,
+        "maxsize" : 100,
         // processing time after end of reception or transmission before starting operations again
         "processing" : {"distribution" : "const", "mean" : 0.000001},
-        "maxslots" : 10,
+        // maximum time slots available for transmitting 0 behaves as trivial CS
+        "maxslots" : [0, 5, 10, 15, 20, 40 , 80, 100, 120, 160],
         // position of nodes, list of x,y pairs
         "nodes" : [[
             [ 12.000000,  1.885714],
@@ -53,54 +54,6 @@
             [ 12.914286,  10.342857]
         ]],
         // log file name using configuration parameters
-        "output" : "/tmp/output_{interarrival.lambda}_{seed}.csv"
-    },
-
-    "test" : {
-        // seed(s) to initialize PRNGs
-        "seed" : [0, 1],
-        // duration of each simulation in seconds
-        "duration" : 30,
-        // communication range in meters
-        "range" : 10,
-        // physical layer datarate in bits per second
-        "datarate" : 8000000,
-        // packet queue size. set to 0 for infinity
-        "queue" : 2,
-        // packet inter-arrival distribution in 1/seconds
-        "interarrival" : [
-            {"distribution" : "exp", "lambda" : 10},
-            {"distribution" : "exp", "lambda" : 20},
-            {"distribution" : "exp", "lambda" : 40},
-            {"distribution" : "exp", "lambda" : 70},
-            {"distribution" : "exp", "lambda" : 120},
-            {"distribution" : "exp", "lambda" : 140},
-            {"distribution" : "exp", "lambda" : 160},
-            {"distribution" : "exp", "lambda" : 190},
-            {"distribution" : "exp", "lambda" : 210},
-            {"distribution" : "exp", "lambda" : 260},
-            {"distribution" : "exp", "lambda" : 350},
-            {"distribution" : "exp", "lambda" : 460},
-            {"distribution" : "exp", "lambda" : 580},
-            {"distribution" : "exp", "lambda" : 690},
-            {"distribution" : "exp", "lambda" : 800},
-            {"distribution" : "exp", "lambda" : 900},
-            {"distribution" : "exp", "lambda" : 1000},
-            {"distribution" : "exp", "lambda" : 1300},
-            {"distribution" : "exp", "lambda" : 1500}
-        ],
-        // packet size distribution in bytes
-        "size" : {"distribution" : "unif", "min" : 32, "max" : 1460, "int" : 1},
-        // maximum packet size in bytes to compute the RX timeout
-        "maxsize" : 1460,
-        // processing time after end of reception or transmission before starting operations again
-        "processing" : {"distribution" : "const", "mean" : 0.000001},
-        "maxslots" : 5,
-        // position of nodes, list of x,y pairs
-        "nodes" : [
-            [[1,1], [2,3], [0, 0]]
-        ],
-        // log file name using configuration parameters
-        "output" : "/tmp/test_output_{interarrival.lambda}_{seed}.csv"
+        "output" : "/tmp/output_{interarrival.lambda}_{seed}_{maxslots}.csv"
     }
 }

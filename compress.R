@@ -50,7 +50,7 @@ data.files <- get.data.files(res.folder, '.csv')
 for (f in data.files) {
     full.path <- paste(res.folder, f, sep='/')
     print(full.path)
-    pars <- get.params(full.path, c('prefix', 'lambda', 'seed'))
+    pars <- get.params(full.path, c('prefix', 'lambda', 'seed', 'slots'))
     d <- read.csv(full.path)
     d <- cbind(d, pars)
     alld <- rbind(d, alld)
