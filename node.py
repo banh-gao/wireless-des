@@ -31,6 +31,7 @@ class Node(FSMNode):
     RX = 2
     PROC = 3
     SENSE = 4
+    WAIT_SLOT = 5
 
     def __init__(self, config, channel, x, y):
         """
@@ -52,6 +53,7 @@ class Node(FSMNode):
             (Node.PROC, Events.PACKET_ENQUEUED): self.stay,
             (Node.TX, Events.PACKET_ENQUEUED): self.stay,
             (Node.SENSE, Events.PACKET_ENQUEUED): self.stay,
+            (Node.WAIT_SLOT, Events.PACKET_ENQUEUED): self.stay,
 
             # Try receiving a packet in the air
             (Node.IDLE, Events.START_RX): self.try_receiving,
@@ -63,6 +65,7 @@ class Node(FSMNode):
             (Node.PROC, Events.START_RX): self.drop_receiving,
             (Node.TX, Events.START_RX): self.drop_receiving,
             (Node.SENSE, Events.START_RX): self.drop_receiving,
+            (Node.WAIT_SLOT, Events.START_RX): self.giveup_and_sense,
 
             # Detect the termination of a packet in the air and
             # remain in the same state
@@ -80,7 +83,9 @@ class Node(FSMNode):
             (Node.TX, Events.END_TX): self.switch_to_proc,
 
             # Resume after processing terminates
-            (Node.PROC, Events.END_PROC): self.resume_operations
+            (Node.PROC, Events.END_PROC): self.resume_operations,
+
+            (Node.WAIT_SLOT, Events.END_SLOT): self.slot_ended
         })
 
         # current packet being received
@@ -97,13 +102,29 @@ class Node(FSMNode):
         if(not self.is_channel_free()):
             return Node.SENSE
 
-        self.transmit()
-        return Node.TX
+        return self.wait_for_slot()
 
     def retry_transmitting(self, event=None):
+        # count packet not in the channel anymore
         self.sense_packet_end()
-
         return self.try_transmitting()
+
+    def wait_for_slot(self, event=None):
+        slot_num = self.slots.get_value()
+        slot_time = slot_num * self.slot_duration
+        self.end_slot = Event(self.sim.get_time() + slot_time, Events.END_SLOT,
+                              self, self)
+        self.sim.schedule_event(self.end_slot)
+        return Node.WAIT_SLOT
+
+    def giveup_and_sense(self, event):
+        self.drop_receiving(event)
+        self.sim.cancel_event(self.end_slot)
+        return Node.SENSE
+
+    def slot_ended(self, event):
+        self.transmit()
+        return Node.TX
 
     def try_receiving(self, event):
         was_channel_free = self.is_channel_free()

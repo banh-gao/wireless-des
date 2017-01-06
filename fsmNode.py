@@ -18,7 +18,7 @@ from distribution import Distribution
 from packet import Packet
 from event import Event
 from events import Events
-
+from channel import Channel
 
 class FSMNode(Module):
     """
@@ -43,6 +43,8 @@ class FSMNode(Module):
     PROC_TIME = "processing"
     # max packet size (bytes)
     MAXSIZE = "maxsize"
+    # slot allocation distribution (integer, max bounds the amount of slots available slots)
+    SLOTS = "slots"
 
     STAY = -1
 
@@ -64,6 +66,12 @@ class FSMNode(Module):
         self.size = Distribution(config.get_param(FSMNode.SIZE))
         self.proc_time = Distribution(config.get_param(FSMNode.PROC_TIME))
         self.maxsize = config.get_param(FSMNode.MAXSIZE)
+
+
+        self.slot_duration = (self.maxsize * 8) / self.datarate \
+                             + (config.get_param(Channel.PAR_RANGE) * 2) / Channel.SOL
+
+        self.slots = Distribution(config.get_param(FSMNode.SLOTS))
 
         # save position
         self.x = x

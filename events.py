@@ -36,3 +36,5 @@ class Events:
     RX_TIMEOUT = 6
     # packed enqueued event
     PACKET_ENQUEUED = 7
+    # slot waiting time ended
+    END_SLOT = 8
