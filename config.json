@@ -38,7 +38,7 @@
         "maxsize" : 1460,
         // processing time after end of reception or transmission before starting operations again
         "processing" : {"distribution" : "const", "mean" : 0.000001},
-        "slots" : {"distribution" : "unif", "min" : 0 , "int" : true , "max" : 100},
+        "maxslots" : 10,
         // position of nodes, list of x,y pairs
         "nodes" : [[
             [ 12.000000,  1.885714],
@@ -95,7 +95,7 @@
         "maxsize" : 1460,
         // processing time after end of reception or transmission before starting operations again
         "processing" : {"distribution" : "const", "mean" : 0.000001},
-        "slots" : {"distribution" : "unif", "min" : 0 , "int" : true , "max" : 5},
+        "maxslots" : 5,
         // position of nodes, list of x,y pairs
         "nodes" : [
             [[1,1], [2,3], [0, 0]]

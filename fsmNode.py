@@ -43,8 +43,8 @@ class FSMNode(Module):
     PROC_TIME = "processing"
     # max packet size (bytes)
     MAXSIZE = "maxsize"
-    # slot allocation distribution (integer, max bounds the amount of slots available slots)
-    SLOTS = "slots"
+    # max available time slots
+    MAXSLOTS = "maxslots"
 
     STAY = -1
 
@@ -71,7 +71,10 @@ class FSMNode(Module):
         self.slot_duration = (self.maxsize * 8) / self.datarate \
                              + (config.get_param(Channel.PAR_RANGE) * 2) / Channel.SOL
 
-        self.slots = Distribution(config.get_param(FSMNode.SLOTS))
+        # the slots distribution for a node
+        self.slots = Distribution({"distribution" : "unif",
+                                   "int" : True, "min" : 0,
+                                   "max" : config.get_param(FSMNode.MAXSLOTS) })
 
         # save position
         self.x = x
