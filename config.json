@@ -39,7 +39,7 @@
         // processing time after end of reception or transmission before starting operations again
         "processing" : {"distribution" : "const", "mean" : 0.000001},
         // maximum time slots available for transmitting 0 behaves as trivial CS
-        "maxslots" : [0, 5, 10, 15, 20, 40 , 80, 100, 120, 160],
+        "maxslots" : [0, 5, 10, 50, 100, 150],
         // position of nodes, list of x,y pairs
         "nodes" : [[
             [ 12.000000,  1.885714],

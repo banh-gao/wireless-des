@@ -22,7 +22,7 @@ PKT_QUEUE_DROPPED = 4
 compute.offered.load <- function(d, data.rate, sim.time) {
     # keep generation events only
     d <- subset(d, event == PKT_GENERATED)
-    offered.load <- ddply(d, c("src", "lambda"), function(x) {
+    offered.load <- ddply(d, c("src", "lambda", "slots"), function(x) {
         return(data.frame(ol=(sum(x$size * 8) / sim.time) / (1024**2)))
     }, .parallel=T)
     return(offered.load)
@@ -30,7 +30,7 @@ compute.offered.load <- function(d, data.rate, sim.time) {
 
 # computes the queue drop rate: dropped packets / generated packets
 compute.drop.rate <- function(d, group=F) {
-    fields <- c('lambda')
+    fields <- c('lambda', 'slots')
     if (!group)
         fields <- c('src', fields)
     drop.rate <- ddply(d, fields, function(x) {
@@ -43,7 +43,7 @@ compute.drop.rate <- function(d, group=F) {
 
 # computes collision rate: corrupter / (received + corrupted)
 compute.collision.rate <- function(d, group=F) {
-    fields <- c('lambda')
+    fields <- c('lambda', 'slots')
     if (!group)
         fields <- c('dst', fields)
     collision.rate <- ddply(d, fields, function(x) {
@@ -56,7 +56,7 @@ compute.collision.rate <- function(d, group=F) {
 
 # compute throughput: total bits received / simulation time
 compute.throughput <- function(d, data.rate, sim.time, group=F) {
-    fields <- c('lambda')
+    fields <- c('lambda', 'slots')
     if (!group)
         fields <- c('dst', fields)
     throughput <- ddply(d, fields, function(x) {
@@ -89,31 +89,31 @@ tr$ol <- offered.load(tr$lambda, n.nodes=n.nodes)
 
 # and plot the results
 div <- 3
-p <- ggplot(tr, aes(x=ol, y=tr)) +
+p <- ggplot(tr, aes(x=ol, y=tr, linetype=factor(slots))) +
      geom_line() +
      geom_point() +
      xlab('total offered load (Mbps)') +
      ylab('throughput at receiver (Mbps)') +
-     labs(color="receiver node")
+     labs(color="Number of slots")
 ggsave(paste(res.folder, '/thr_', n.nodes, '.pdf', sep=''), width=16/div, height=9/div)
 print(p)
 
-pcr <- ggplot(cr, aes(x=ol, y=cr)) +
+pcr <- ggplot(cr, aes(x=ol, y=cr, linetype=factor(slots))) +
        geom_line() +
        geom_point() +
        xlab('total offered load (Mbps)') +
        ylab('packet collision rate at receiver') +
-       labs(color="receiver node") +
+       labs(color="Number of slots") +
        ylim(c(0, 1))
 ggsave(paste(res.folder, '/pcr_', n.nodes, '.pdf', sep=''), width=16/div, height=9/div)
 print(pcr)
 
-pdr <- ggplot(dr, aes(x=ol, y=dr)) +
+pdr <- ggplot(dr, aes(x=ol, y=dr, linetype=factor(slots))) +
        geom_line() +
        geom_point() +
        xlab('total offered load (Mbps)') +
        ylab('packet drop rate at sender') +
-       labs(color="sender node") +
+       labs(color="Number of slots") +
        ylim(c(0, 1))
 ggsave(paste(res.folder, '/pdr_', n.nodes, '.pdf', sep=''), width=16/div, height=9/div)
 print(pdr)
