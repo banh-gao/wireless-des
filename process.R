@@ -1,6 +1,5 @@
 library(plyr)
 library(doMC)
-library(ggplot2)
 registerDoMC(cores=detectCores())
 
 # command line argument, if present, indicates the results folder
@@ -82,38 +81,12 @@ n.nodes <- length(unique(alld$src))
 # compute the statistics
 cr <- compute.collision.rate(alld, group=T)
 cr$ol <- offered.load(cr$lambda, n.nodes=n.nodes)
+save(cr, file="cr.Rdata")
+
 dr <- compute.drop.rate(alld, group=T)
 dr$ol <- offered.load(dr$lambda, n.nodes=n.nodes)
+save(dr, file="dr.Rdata")
+
 tr <- compute.throughput(alld, 8e6, sim.time, group=T)
 tr$ol <- offered.load(tr$lambda, n.nodes=n.nodes)
-
-# and plot the results
-div <- 3
-p <- ggplot(tr, aes(x=ol, y=tr, linetype=factor(slots))) +
-     geom_line() +
-     geom_point() +
-     xlab('total offered load (Mbps)') +
-     ylab('throughput at receiver (Mbps)') +
-     labs(color="Number of slots")
-ggsave(paste(res.folder, '/thr_', n.nodes, '.pdf', sep=''), width=16/div, height=9/div)
-print(p)
-
-pcr <- ggplot(cr, aes(x=ol, y=cr, linetype=factor(slots))) +
-       geom_line() +
-       geom_point() +
-       xlab('total offered load (Mbps)') +
-       ylab('packet collision rate at receiver') +
-       labs(color="Number of slots") +
-       ylim(c(0, 1))
-ggsave(paste(res.folder, '/pcr_', n.nodes, '.pdf', sep=''), width=16/div, height=9/div)
-print(pcr)
-
-pdr <- ggplot(dr, aes(x=ol, y=dr, linetype=factor(slots))) +
-       geom_line() +
-       geom_point() +
-       xlab('total offered load (Mbps)') +
-       ylab('packet drop rate at sender') +
-       labs(color="Number of slots") +
-       ylim(c(0, 1))
-ggsave(paste(res.folder, '/pdr_', n.nodes, '.pdf', sep=''), width=16/div, height=9/div)
-print(pdr)
+save(tr, file="tr.Rdata")
