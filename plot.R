@@ -8,24 +8,23 @@ if (length(args) != 0) {
     res.folder <- './'
 }
 
-load("tr.Rdata")
-load("cr.Rdata")
-load("dr.Rdata")
+res.file <- paste(res.folder, "res.rds", sep='/')
+results <- readRDS(res.file)
 
 # and plot the results
 div <- 3
-p <- ggplot(tr, aes(x=ol, y=tr, linetype=factor(slots))) +
+p <- ggplot(results, aes(x=ol, y=tr, linetype=factor(slots))) +
     geom_line() +
-        geom_point() +
+    geom_point() +
      xlab('total offered load (Mbps)') +
      ylab('throughput at receiver (Mbps)') +
      labs(color="Number of slots")
 ggsave(paste(res.folder, '/thr.pdf', sep=''), width=16/div, height=9/div)
 print(p)
 
-pcr <- ggplot(cr, aes(x=ol, y=cr, linetype=factor(slots))) +
+pcr <- ggplot(results, aes(x=ol, y=cr, linetype=factor(slots))) +
     geom_line() +
-        geom_point() +
+    geom_point() +
        xlab('total offered load (Mbps)') +
        ylab('packet collision rate at receiver') +
        labs(color="Number of slots") +
@@ -33,7 +32,7 @@ pcr <- ggplot(cr, aes(x=ol, y=cr, linetype=factor(slots))) +
 ggsave(paste(res.folder, '/pcr.pdf', sep=''), width=16/div, height=9/div)
 print(pcr)
 
-pdr <- ggplot(dr, aes(x=ol, y=dr, linetype=factor(slots))) +
+pdr <- ggplot(results, aes(x=ol, y=dr, linetype=factor(slots))) +
     geom_line() +
     geom_point() +
        xlab('total offered load (Mbps)') +

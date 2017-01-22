@@ -63,6 +63,7 @@ compute.collision.rate <- function(d) {
         lost.packets <- subset(all.packets, event == PKT_CORRUPTED)
         return(data.frame(cr=nrow(lost.packets)/nrow(all.packets)))
     }, .parallel=T)
+    collision.rate$dst <- NULL
     return(collision.rate)
 }
 
@@ -75,6 +76,7 @@ compute.drop.rate <- function(d) {
         lost.packets <- subset(x, event == PKT_QUEUE_DROPPED)
         return(data.frame(dr=nrow(lost.packets)/nrow(all.packets)))
     }, .parallel=T)
+    drop.rate$src <- NULL
     return(drop.rate)
 }
 
@@ -87,6 +89,7 @@ compute.throughput <- function(d) {
         received.packets <- subset(x, event == PKT_RECEIVED)
         return(data.frame(tr=sum(received.packets$size*8)/sim.time/(1024**2)))
     }, .parallel=T)
+    throughput$dst <- NULL
     return(throughput)
 }
 
@@ -95,15 +98,15 @@ compute.offered.load <- function(d, packet.size=(1460+32)/2) {
     printf("Computing offered load...")
     lambda <- unique(d$lambda)
     nodes <- length(unique(data$src))
-    lambda*nodes*packet.size*8/1024/1024
+    return(data.frame(lambda=d$lambda , slots=d$slots, ol=lambda*nodes*packet.size*8/1024/1024))
 }
 
 save.results <- function(res, type, pars, out.folder) {
     filename <- paste(pars, collapse='_')
-    filename <- sprintf("%s_%s.Rdata", type, filename)
+    filename <- sprintf("%s_%s.rds", type, filename)
     out.path <- paste(out.folder, filename , sep='/')
     printf("Saving results in %s ...", out.path)
-    save(res, file=out.path)
+    saveRDS(res, file=out.path)
 }
 
 ## load simulation data with params
