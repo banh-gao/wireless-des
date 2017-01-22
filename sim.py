@@ -184,45 +184,15 @@ class Sim:
             sys.stderr.write("Cannot run the simulation. "
                              "Call initialize() first\n")
             sys.exit(1)
-        # save the time at which the simulation started,
-        # for statistical purpose
-        start_time = time.time()
-        # last time we printed the simulation percentage
-        prev_time = start_time
-        # print percentage for the first time (0%)
-        self.print_percentage(True)
+
         # main simulation loop
         while self.time <= self.duration:
             # get next event and call the handle method of the destination
             event = self.next_event()
             dst = event.get_destination()
             dst.handle_event(event)
-            # get current real time
-            curr_time = time.time()
-            # if more than a second has elapsed, update the percentage bar
-            if curr_time - prev_time >= 1:
-                self.print_percentage(False)
-                prev_time = curr_time
-        # simulation completed, print the percentage for the last time (100%)
-        self.print_percentage(False)
-        # compute how much time the simulation took
-        end_time = time.time()
-        total_time = round(end_time - start_time)
-        print("\nMaximum simulation time reached. Terminating.")
-        print("Total simulation time: %d hours, %d minutes, %d seconds" %
-              (total_time / 3600, total_time % 3600 / 60,
-               total_time % 3600 % 60))
 
-    def print_percentage(self, first):
-        # go back to the beginning of the line
-        if not first:
-            sys.stdout.write('\r' + ERASE_LINE)
-        # compute percentage
-        perc = min(100, int(math.floor(self.time/self.duration*100)))
-        # print progress bar, percentage, and current element
-        sys.stdout.write("[%-20s] %d%% (time = %f, total time = %f)" %
-                         ('='*(perc/5), perc, (self.time), self.duration))
-        sys.stdout.flush()
+        print(self.config.output_file)
 
     def get_params(self, run_number):
         """
