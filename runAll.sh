@@ -2,31 +2,29 @@
 
 set -e
 
-RES_DIR=/tmp
-OUT_DIR="$( pwd )"
-
 SRC_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+TMP_DIR=$(mktemp -d /tmp/sim.XXX)
+OUT_DIR="$( pwd )"
 
 if [ $# -ne 2 ]; then
     echo "usage: $0 confFile maxSimulation"
     exit 0
 fi
 
-
 # Setup proper cleanup
 cleanup() {
     echo "Simulations abnormally halted!"
-    echo "See simulations data in $RES_DIR"
+    echo "See simulations data in $TMP_DIR"
     exit 1
 }
+
 trap cleanup HUP INT QUIT KILL PIPE TERM
 
 echo "Running simulations from 0 to $2 ..."
-parallel --progress "$SRC_DIR/main.py -c $1 -r {} 1> $RES_DIR/sim_{}.log" ::: $(seq 0 $2)
+parallel --progress "$SRC_DIR/runSingle.sh $1 {} $TMP_DIR > $TMP_DIR/sim_{}.log 2>&1" ::: $(seq 0 $2)
 
-echo "Compressing results ..."
-Rscript --vanilla $SRC_DIR/compress.R $RES_DIR $OUT_DIR
-echo "Cleaning up temp files ..."
-rm $RES_DIR/output_*.csv
+echo "Interpolating results ..."
+Rscript --vanilla $SRC_DIR/interpolate.R $TMP_DIR $OUT_DIR
 
 echo "Results saved in $OUT_DIR/alld.Rdata"

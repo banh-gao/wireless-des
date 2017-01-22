@@ -56,5 +56,6 @@
         ]],
         // log file name using configuration parameters
         "output" : "/tmp/output_{interarrival.lambda}_{seed}_{maxslots}.csv"
+        "output" : "{interarrival.lambda}_{seed}_{maxslots}.csv"
     }
 }
