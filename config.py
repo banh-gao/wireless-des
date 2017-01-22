@@ -28,15 +28,17 @@ class Config:
     # output file name parameter
     OUTPUT = "output"
 
-    def __init__(self, config_file, section):
+    def __init__(self, config_file, section, out_dir):
         """
         Constructor.
         :param config_file: file name of the config file
         :param section: the section of the configuration file to load
+        :param out_dir: the directory where to save results
         """
         # save basic configuration
         self.config_file = config_file
         self.section = section
+        self.out_dir = out_dir
         # load configuration from json
         json_content = self.remove_comments(config_file)
         try:
@@ -255,7 +257,7 @@ class Config:
             sys.stderr.write("Invalid syntax for %s\n" % template)
             sys.exit(1)
 
-        self.output_file = output
+        self.output_file = self.out_dir + '/' + output
 
     def get_output_file(self):
         return self.output_file

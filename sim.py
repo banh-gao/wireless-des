@@ -62,7 +62,7 @@ class Sim:
         # empty section
         self.section = ""
 
-    def set_config(self, config_file, section):
+    def set_config(self, config_file, section, out_dir):
         """
         Set config file and section
         :param config_file: file name of the config file
@@ -71,7 +71,7 @@ class Sim:
         self.config_file = config_file
         self.section = section
         # instantiate config manager
-        self.config = Config(self.config_file, self.section)
+        self.config = Config(self.config_file, self.section, out_dir)
 
     def get_runs_count(self):
         """

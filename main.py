@@ -35,6 +35,9 @@ parser.add_option("-r", "--run", dest="run", default=0, action="store",
 parser.add_option("-c", "--config", dest="config", default="config.json",
                   action="store",
                   help="simulation config file [default: %default]")
+parser.add_option("-o", "--outdir", dest="outdir", default=".",
+                  action="store",
+                  help="output directory [default: %default]")
 parser.add_option("-s", "--section", dest="section", default="simulation",
                   action="store",
                   help="section inside configuration file [default: %default]")
@@ -48,7 +51,7 @@ if options.config == "" or options.section == "":
     sys.exit(1)
 
 simulator = sim.Sim.Instance()
-simulator.set_config(options.config, options.section)
+simulator.set_config(options.config, options.section, options.outdir)
 
 # list simulation runs and exit
 if options.list or options.verbose_list:
