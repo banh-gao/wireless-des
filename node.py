@@ -65,6 +65,8 @@ class Node(FSMNode):
             (Node.PROC, Events.START_RX): self.drop_receiving,
             (Node.TX, Events.START_RX): self.drop_receiving,
             (Node.SENSE, Events.START_RX): self.drop_receiving,
+
+            # Stop waiting for slot and go back to sense until ch is free again
             (Node.WAIT_SLOT, Events.START_RX): self.giveup_and_sense,
 
             # Detect the termination of a packet in the air and
@@ -164,6 +166,9 @@ class Node(FSMNode):
         # count new packet in the channel
         self.sense_packet_start()
 
+        packet = event.get_obj()
+        packet.set_state(Packet.PKT_CORRUPTED)
+
         # If the node is not in IDLE or RX, it is not able to decode a new
         # packet so just ignore it and remain in same state
         return FSMNode.STAY
@@ -198,6 +203,13 @@ class Node(FSMNode):
     def end_packet(self, event):
         # count packet not in the channel anymore and stay in the same state
         self.sense_packet_end()
+
+        packet = event.get_obj()
+        # Since we were are not in RX state this packet starts when the node was
+        # not ready to receive it. This means it has to be set as corrupted
+        # (see drop_receiving method)
+        assert(packet.get_state() == Packet.PKT_CORRUPTED)
+        self.logger.log_packet(event.get_source(), self, packet)
 
         return FSMNode.STAY
 
