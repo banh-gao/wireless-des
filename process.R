@@ -13,8 +13,6 @@ PKT_CORRUPTED = 2
 PKT_GENERATED = 3
 PKT_QUEUE_DROPPED = 4
 
-DATA_RATE <- 8e6
-
 # command line argument, if present, indicates the results folder
 args <- commandArgs(trailingOnly = T)
 data.file <- args[1]
@@ -56,56 +54,49 @@ load.data <- function(data.file) {
 
 # computes collision rate: corrupted / (received + corrupted)
 compute.collision.rate <- function(d) {
-    printf("Computing collision rate...")
-    fields <- c('dst', 'lambda', 'slots')
-    collision.rate <- ddply(d, fields, function(x) {
-        all.packets <- subset(x, event == PKT_RECEIVED | event == PKT_CORRUPTED)
-        lost.packets <- subset(all.packets, event == PKT_CORRUPTED)
-        return(data.frame(cr=nrow(lost.packets)/nrow(all.packets)))
-    }, .parallel=T)
-    collision.rate$dst <- NULL
-    return(collision.rate)
+    all.packets <- subset(d, event == PKT_RECEIVED | event == PKT_CORRUPTED)
+    lost.packets <- subset(all.packets, event == PKT_CORRUPTED)
+    return(data.frame(cr=nrow(lost.packets)/nrow(all.packets)))
 }
 
 # computes the queue drop rate: dropped packets / generated packets
 compute.drop.rate <- function(d) {
     printf("Computing drop rate...")
-    fields <- c('src','lambda', 'slots')
-    drop.rate <- ddply(d, fields, function(x) {
-        all.packets <- subset(x, event == PKT_GENERATED)
-        lost.packets <- subset(x, event == PKT_QUEUE_DROPPED)
-        return(data.frame(dr=nrow(lost.packets)/nrow(all.packets)))
-    }, .parallel=T)
-    drop.rate$src <- NULL
-    return(drop.rate)
+    all.packets <- subset(d, event == PKT_GENERATED)
+    lost.packets <- subset(d, event == PKT_QUEUE_DROPPED)
+    return(data.frame(dr=nrow(lost.packets)/nrow(all.packets)))
 }
 
-# compute throughput: total bits received / simulation time
+# compute throughput(bytes/sec): received bytes / simulation time
 compute.throughput <- function(d) {
     printf("Computing throughput...")
-    fields <- c('dst', 'lambda', 'slots')
     sim.time <- max(d$time)
-    throughput <- ddply(d, fields, function(x) {
-        received.packets <- subset(x, event == PKT_RECEIVED)
-        return(data.frame(tr=sum(received.packets$size*8)/sim.time/(1024**2)))
-    }, .parallel=T)
-    throughput$dst <- NULL
-    return(throughput)
+    received.packets <- subset(d, event == PKT_RECEIVED)
+    return(data.frame(tr=sum(received.packets$size)/sim.time))
 }
 
-# total offered load in bits per second
-compute.offered.load <- function(d, packet.size=(1460+32)/2) {
-    printf("Computing offered load...")
-    lambda <- unique(d$lambda)
-    nodes <- length(unique(data$src))
-    return(data.frame(lambda=d$lambda , slots=d$slots, ol=lambda*nodes*packet.size*8/1024/1024))
+compute.packet.size <- function(d) {
+    printf("Computing packets size...")
+    return(data.frame(sz=mean(d$size)))
 }
 
-save.results <- function(res, type, pars, out.folder) {
+calc.stats <- function(data, var) {
+    if(var == 'dr') {
+        return(compute.drop.rate(data))
+    } else if (var == 'cr') {
+        return(compute.collision.rate(data))
+    } else if (var == 'tr') {
+        return(compute.throughput(data))
+    } else if (var == 'sz') {
+        return(compute.packet.size(data))
+    }
+}
+
+save.results <- function(res, pars, out.folder) {
     filename <- paste(pars, collapse='_')
-    filename <- sprintf("%s_%s.rds", type, filename)
+    filename <- sprintf("stats_%s.rds", filename)
     out.path <- paste(out.folder, filename , sep='/')
-    printf("Saving results in %s ...", out.path)
+    printf("Saving stats in %s ...", out.path)
     saveRDS(res, file=out.path)
 }
 
@@ -114,19 +105,11 @@ data <- load.data(data.file)
 pars <- get.params(data.file)
 data <- cbind(data, pars)
 
-# compute the statistics
-ol <- compute.offered.load(data)
-save.results(ol, 'ol', pars, out.folder)
-rm(ol)
+## Calculate statistics for each var separately
+vars <- c('cr', 'dr', 'tr', 'sz')
+stat.by.var <- Map(calc.stats, list(data), vars)
 
-cr <- compute.collision.rate(data)
-save.results(cr, 'cr', pars, out.folder)
-rm(cr)
-
-dr <- compute.drop.rate(data)
-save.results(dr, 'dr', pars, out.folder)
-rm(dr)
-
-tr <- compute.throughput(data)
-save.results(tr, 'tr', pars, out.folder)
-rm(tr)
+## Merge vars is a single result file per simulation
+res <- Reduce(merge, stat.by.var)
+res <- cbind(pars, res)
+save.results(res, pars, out.folder)
