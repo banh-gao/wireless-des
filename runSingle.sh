@@ -16,7 +16,11 @@ cleanup() {
     exit 1
 }
 
-trap cleanup HUP INT QUIT KILL PIPE TERM
-DATAFILE=$($SRC_DIR/main.py -c $1 -r $2 -o $3)
+CONF=$1
+SIM_NUM=$2
+OUT_DIR=$3
 
-Rscript $SRC_DIR/process.R $DATAFILE $3
+trap cleanup HUP INT QUIT KILL PIPE TERM
+
+DATAFILE=$($SRC_DIR/main.py -c "$CONF" -r $SIM_NUM -o "$OUT_DIR")
+Rscript $SRC_DIR/process.R $DATAFILE "$OUT_DIR"

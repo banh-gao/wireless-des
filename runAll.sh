@@ -12,6 +12,8 @@ if [ $# -ne 2 ]; then
     exit 0
 fi
 
+CONF=$1
+MAX_SIM=$2
 # Setup proper cleanup
 cleanup() {
     echo "Simulations abnormally halted!"
@@ -25,6 +27,9 @@ echo "Running simulations from 0 to $2 ..."
 parallel --progress "$SRC_DIR/runSingle.sh $1 {} $TMP_DIR > $TMP_DIR/sim_{}.log 2>&1" ::: $(seq 0 $2)
 
 echo "Interpolating results ..."
-Rscript --vanilla $SRC_DIR/interpolate.R $TMP_DIR $OUT_DIR
+Rscript $SRC_DIR/interpolate.R "$TMP_DIR" "$OUT_DIR"
 
-echo "Results saved in $OUT_DIR/alld.Rdata"
+NUM_NODES=10
+
+echo "Plotting results ..."
+Rscript $SRC_DIR/plot.R "$OUT_DIR" $NUM_NODES
