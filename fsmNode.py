@@ -42,8 +42,6 @@ class FSMNode(Module):
     SIZE = "size"
     # processing time distribution (seconds)
     PROC_TIME = "processing"
-    # max packet size (bytes)
-    MAXSIZE = "maxsize"
     # max available time slots
     MAXSLOTS = "maxslots"
 
@@ -66,14 +64,12 @@ class FSMNode(Module):
         self.interarrival = Distribution(config.get_param(FSMNode.INTERARRIVAL))
         self.size = Distribution(config.get_param(FSMNode.SIZE))
         self.proc_time = Distribution(config.get_param(FSMNode.PROC_TIME))
-        self.maxsize = config.get_param(FSMNode.MAXSIZE)
 
         # a slot lasts the maximum time a packet would take to be transmitted
-        max_pkt_time = (self.maxsize * 8) / self.datarate
+        max_pkt_time = (config.get_param(FSMNode.SIZE)[Distribution.MAX] * 8) / self.datarate
         prop_delay = (config.get_param(Channel.PAR_RANGE)) / Channel.SOL
-        max_nodes_concurr = len(config.get_param("nodes")) * prop_delay
 
-        self.slot_duration = max_nodes_concurr + max_pkt_time
+        self.slot_duration = max_pkt_time + prop_delay
 
         # the slots distribution for a node
         self.slots = Distribution({"distribution" : "unif",

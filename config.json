@@ -20,27 +20,14 @@
             {"distribution" : "exp", "lambda" : 140},
             {"distribution" : "exp", "lambda" : 160},
             {"distribution" : "exp", "lambda" : 190},
-            {"distribution" : "exp", "lambda" : 210},
-            {"distribution" : "exp", "lambda" : 350},
-            {"distribution" : "exp", "lambda" : 460},
-            {"distribution" : "exp", "lambda" : 690},
-            {"distribution" : "exp", "lambda" : 900},
-            {"distribution" : "exp", "lambda" : 1300},
-            {"distribution" : "exp", "lambda" : 1500},
-            {"distribution" : "exp", "lambda" : 1700},
-            {"distribution" : "exp", "lambda" : 2000},
-            {"distribution" : "exp", "lambda" : 2500},
-            {"distribution" : "exp", "lambda" : 3000},
-            {"distribution" : "exp", "lambda" : 4000}
+            {"distribution" : "exp", "lambda" : 210}
         ],
         // packet size distribution in bytes
         "size" : {"distribution" : "unif", "min" : 32, "max" : 1460, "int" : 1},
-        // maximum packet size in bytes to compute the RX timeout
-        "maxsize" : 100,
         // processing time after end of reception or transmission before starting operations again
         "processing" : {"distribution" : "const", "mean" : 0.000001},
         // maximum time slots available for transmitting 0 behaves as trivial CS
-        "maxslots" : [0, 5, 10, 50],
+        "maxslots" : [50],
         // position of nodes, list of x,y pairs
         "nodes" : [[
             [ 12.000000,  1.885714],
