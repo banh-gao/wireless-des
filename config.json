@@ -1,33 +1,28 @@
 {
     "simulation" : {
         // seed(s) to initialize PRNGs
-        "seed" : [0, 1, 2],
+        "seed" : [0],
         // duration of each simulation in seconds
-        "duration" : 10,
+        "duration" : 2,
         // communication range in meters
         "range" : 50,
         // physical layer datarate in bits per second
         "datarate" : 8000000,
         // packet queue size. set to 0 for infinity
-        "queue" : 1,
+        "queue" : 0,
         // packet inter-arrival distribution in 1/seconds
         "interarrival" : [
             {"distribution" : "exp", "lambda" : 10},
             {"distribution" : "exp", "lambda" : 20},
             {"distribution" : "exp", "lambda" : 40},
-            {"distribution" : "exp", "lambda" : 70},
-            {"distribution" : "exp", "lambda" : 120},
-            {"distribution" : "exp", "lambda" : 140},
-            {"distribution" : "exp", "lambda" : 160},
-            {"distribution" : "exp", "lambda" : 190},
-            {"distribution" : "exp", "lambda" : 210}
+            {"distribution" : "exp", "lambda" : 70}
         ],
         // packet size distribution in bytes
         "size" : {"distribution" : "unif", "min" : 32, "max" : 1460, "int" : 1},
         // processing time after end of reception or transmission before starting operations again
         "processing" : {"distribution" : "const", "mean" : 0.000001},
         // maximum time slots available for transmitting 0 behaves as trivial CS
-        "maxslots" : [50],
+        "maxslots" : [0],
         // position of nodes, list of x,y pairs
         "nodes" : [[
             [ 12.000000,  1.885714],
