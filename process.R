@@ -72,12 +72,13 @@ compute.throughput <- function(d) {
     printf("Computing throughput...")
     sim.time <- max(d$time)
     received.packets <- subset(d, event == PKT_RECEIVED)
-    return(data.frame(tr=sum(received.packets$size)/sim.time))
+    return(data.frame(th=sum(received.packets$size)/sim.time))
 }
 
 compute.packet.size <- function(d) {
-    printf("Computing packets size...")
-    return(data.frame(sz=mean(d$size)))
+    printf("Computing transmitted packets size...")
+    all.packets <- subset(d, event == PKT_RECEIVED | event == PKT_CORRUPTED)
+    return(data.frame(sz=mean(all.packets$size)))
 }
 
 calc.stats <- function(data, var) {
@@ -85,7 +86,7 @@ calc.stats <- function(data, var) {
         return(compute.drop.rate(data))
     } else if (var == 'cr') {
         return(compute.collision.rate(data))
-    } else if (var == 'tr') {
+    } else if (var == 'th') {
         return(compute.throughput(data))
     } else if (var == 'sz') {
         return(compute.packet.size(data))
@@ -97,19 +98,23 @@ save.results <- function(res, pars, out.folder) {
     filename <- sprintf("stats_%s.rds", filename)
     out.path <- paste(out.folder, filename , sep='/')
     printf("Saving stats in %s ...", out.path)
+
+    # Save params as columns
+    res <- cbind(pars, res)
+
     saveRDS(res, file=out.path)
 }
 
-## load simulation data with params
+## load simulation data
 data <- load.data(data.file)
-pars <- get.params(data.file)
-data <- cbind(data, pars)
 
 ## Calculate statistics for each var separately
-vars <- c('cr', 'dr', 'tr', 'sz')
+vars <- c('cr', 'dr', 'th', 'sz')
 stat.by.var <- Map(calc.stats, list(data), vars)
+print(stat.by.var)
 
 ## Merge vars is a single result file per simulation
 res <- Reduce(merge, stat.by.var)
-res <- cbind(pars, res)
+
+pars <- get.params(data.file)
 save.results(res, pars, out.folder)

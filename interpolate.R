@@ -18,15 +18,14 @@ get.data.files <- function(folder) {
 
 load.files <- function(file.list) {
     ldply(file.list, function(file) {
-        d <- readRDS(file)
-        d$seed <- NULL
-        d
+        readRDS(file)
     })
 }
 
 interpolate <- function(data.f) {
     printf("Interpolating data ...")
     i <- aggregate(data.f, by=list(f1=data.f$lambda, f2=data.f$slots), mean)
+    i$seed <- NULL
     i$f1 <- NULL
     i$f2 <- NULL
     i

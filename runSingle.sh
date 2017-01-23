@@ -23,4 +23,4 @@ OUT_DIR=$3
 trap cleanup HUP INT QUIT KILL PIPE TERM
 
 DATAFILE=$($SRC_DIR/main.py -c "$CONF" -r $SIM_NUM -o "$OUT_DIR")
-Rscript $SRC_DIR/process.R $DATAFILE "$OUT_DIR"
+Rscript $SRC_DIR/process.R "$DATAFILE" "$OUT_DIR"
