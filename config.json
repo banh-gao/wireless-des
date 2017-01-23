@@ -3,7 +3,7 @@
         // seed(s) to initialize PRNGs
         "seed" : [0],
         // duration of each simulation in seconds
-        "duration" : 2,
+        "duration" : 10,
         // communication range in meters
         "range" : 50,
         // physical layer datarate in bits per second
@@ -12,10 +12,13 @@
         "queue" : 0,
         // packet inter-arrival distribution in 1/seconds
         "interarrival" : [
-            {"distribution" : "exp", "lambda" : 10},
             {"distribution" : "exp", "lambda" : 20},
             {"distribution" : "exp", "lambda" : 40},
-            {"distribution" : "exp", "lambda" : 70}
+            {"distribution" : "exp", "lambda" : 120},
+            {"distribution" : "exp", "lambda" : 140},
+            {"distribution" : "exp", "lambda" : 160},
+            {"distribution" : "exp", "lambda" : 190},
+            {"distribution" : "exp", "lambda" : 210}
         ],
         // packet size distribution in bytes
         "size" : {"distribution" : "unif", "min" : 32, "max" : 1460, "int" : 1},
