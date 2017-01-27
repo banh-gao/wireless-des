@@ -13,7 +13,7 @@ results$ol <- results$lambda * results$sz * num.nodes
 # Convert offered load from Bps to Mbps
 results$ol <- results$ol * 8 / 1024^2
 #Convert throughput from Bps to Mbps
-results$th <- results$th * 8 / 1024^2
+results$th <- results$th * 8 / 1024^2 / num.nodes
 
 print(results)
 
