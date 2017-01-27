@@ -1,9 +1,9 @@
 {
-    "simulation" : {
+    "half" : {
         // seed(s) to initialize PRNGs
-        "seed" : [0],
+        "seed" : [0, 1, 2],
         // duration of each simulation in seconds
-        "duration" : 2,
+        "duration" : 10,
         // communication range in meters
         "range" : 50,
         // physical layer datarate in bits per second
@@ -14,29 +14,84 @@
         "interarrival" : [
             {"distribution" : "exp", "lambda" : 10},
             {"distribution" : "exp", "lambda" : 20},
+            {"distribution" : "exp", "lambda" : 30},
             {"distribution" : "exp", "lambda" : 40},
-            {"distribution" : "exp", "lambda" : 70}
+            {"distribution" : "exp", "lambda" : 60},
+            {"distribution" : "exp", "lambda" : 80},
+            {"distribution" : "exp", "lambda" : 120},
+            {"distribution" : "exp", "lambda" : 160},
+            {"distribution" : "exp", "lambda" : 240},
+            {"distribution" : "exp", "lambda" : 320},
+            {"distribution" : "exp", "lambda" : 480},
+            {"distribution" : "exp", "lambda" : 560},
+            {"distribution" : "exp", "lambda" : 640},
+            {"distribution" : "exp", "lambda" : 800}
         ],
         // packet size distribution in bytes
         "size" : {"distribution" : "unif", "min" : 32, "max" : 1460, "int" : 1},
         // processing time after end of reception or transmission before starting operations again
         "processing" : {"distribution" : "const", "mean" : 0.000001},
         // maximum time slots available for transmitting 0 behaves as trivial CS
-        "maxslots" : [0],
+        "maxslots" : [0, 100, 500, 1000],
         // position of nodes, list of x,y pairs
-        "nodes" : [[
-            [ 12.000000,  1.885714],
-            [ 15.371429,  1.685714],
-            [ 15.057143,  6.342857],
-            [ 17.314286, 10.257143],
-            [ 19.285714,  1.228571],
-            [ 22.085714,  6.285714],
-            [ 7.142857,  12.171429],
-            [ 26.000000,  4.371429],
-            [ 6.428571,   2.714286],
-            [ 12.914286, 10.342857]
-        ]],
+        "nodes" : [
+            [[ 12.000000,  1.885714],
+             [ 15.371429,  1.685714],
+             [ 15.057143,  6.342857],
+             [ 17.314286, 10.257143],
+             [ 19.285714,  1.228571]]
+        ],
         // log file name using configuration parameters
-        "output" : "{interarrival.lambda}_{seed}_{maxslots}.csv"
+        "output" : "{interarrival.lambda}_{seed}_{maxslots}_5.csv"
+    },
+    "complete" : {
+        // seed(s) to initialize PRNGs
+        "seed" : [0, 1, 2],
+        // duration of each simulation in seconds
+        "duration" : 10,
+        // communication range in meters
+        "range" : 50,
+        // physical layer datarate in bits per second
+        "datarate" : 8000000,
+        // packet queue size. set to 0 for infinity
+        "queue" : 0,
+        // packet inter-arrival distribution in 1/seconds
+        "interarrival" : [
+            {"distribution" : "exp", "lambda" : 10},
+            {"distribution" : "exp", "lambda" : 20},
+            {"distribution" : "exp", "lambda" : 30},
+            {"distribution" : "exp", "lambda" : 40},
+            {"distribution" : "exp", "lambda" : 60},
+            {"distribution" : "exp", "lambda" : 80},
+            {"distribution" : "exp", "lambda" : 120},
+            {"distribution" : "exp", "lambda" : 160},
+            {"distribution" : "exp", "lambda" : 240},
+            {"distribution" : "exp", "lambda" : 320},
+            {"distribution" : "exp", "lambda" : 480},
+            {"distribution" : "exp", "lambda" : 560},
+            {"distribution" : "exp", "lambda" : 640},
+            {"distribution" : "exp", "lambda" : 800}
+        ],
+        // packet size distribution in bytes
+        "size" : {"distribution" : "unif", "min" : 32, "max" : 1460, "int" : 1},
+        // processing time after end of reception or transmission before starting operations again
+        "processing" : {"distribution" : "const", "mean" : 0.000001},
+        // maximum time slots available for transmitting 0 behaves as trivial CS
+        "maxslots" : [0, 500, 1000, 1500],
+        // position of nodes, list of x,y pairs
+        "nodes" : [
+            [[ 12.000000,  1.885714],
+             [ 15.371429,  1.685714],
+             [ 15.057143,  6.342857],
+             [ 17.314286, 10.257143],
+             [ 19.285714,  1.228571],
+             [ 22.085714,  6.285714],
+             [ 7.142857,  12.171429],
+             [ 26.000000,  4.371429],
+             [ 6.428571,   2.714286],
+             [ 12.914286, 10.342857]]
+        ],
+        // log file name using configuration parameters
+        "output" : "{interarrival.lambda}_{seed}_{maxslots}_10.csv"
     }
 }

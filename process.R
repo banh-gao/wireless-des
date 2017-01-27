@@ -18,7 +18,7 @@ args <- commandArgs(trailingOnly = T)
 data.file <- args[1]
 out.folder <- args[2]
 
-PARAMS <- c('lambda', 'seed', 'slots')
+PARAMS <- c('lambda', 'seed', 'slots', 'nodes')
 
 printf <- function(...) invisible(print(sprintf(...)))
 
@@ -55,6 +55,8 @@ load.data <- function(data.file) {
 # computes collision rate: corrupted / (received + corrupted)
 compute.collision.rate <- function(d) {
     all.packets <- subset(d, event == PKT_RECEIVED | event == PKT_CORRUPTED)
+    if(nrow(all.packets) == 0)
+       return(0)
     lost.packets <- subset(all.packets, event == PKT_CORRUPTED)
     return(nrow(lost.packets)/nrow(all.packets))
 }
@@ -72,13 +74,23 @@ compute.throughput <- function(d) {
     printf("Computing throughput...")
     sim.time <- max(d$time)
     received.packets <- subset(d, event == PKT_RECEIVED)
+<<<<<<< HEAD
+=======
+    if(nrow(received.packets) == 0)
+        return(0)
+>>>>>>> fix-slots
     return(sum(received.packets$size)/sim.time)
 }
 
 # compute mean packet size
 compute.packet.size <- function(d) {
+<<<<<<< HEAD
     printf("Computing transmitted packets size...")
     all.packets <- subset(d, event == PKT_RECEIVED | event == PKT_CORRUPTED)
+=======
+    printf("Computing average packets size...")
+    all.packets <- subset(d, event == PKT_GENERATED)
+>>>>>>> fix-slots
     return(mean(all.packets$size))
 }
 

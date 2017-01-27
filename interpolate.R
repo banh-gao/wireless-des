@@ -24,10 +24,11 @@ load.files <- function(file.list) {
 
 interpolate <- function(data.f) {
     printf("Interpolating data ...")
-    i <- aggregate(data.f, by=list(f1=data.f$lambda, f2=data.f$slots), mean)
+    i <- aggregate(data.f, by=list(f1=data.f$lambda, f2=data.f$slots, f3=data.f$nodes), mean)
     i$seed <- NULL
     i$f1 <- NULL
     i$f2 <- NULL
+    i$f3 <- NULL
     i
 }
 data.files <- get.data.files(res.folder)

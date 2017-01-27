@@ -7,13 +7,14 @@ SRC_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 TMP_DIR=$(mktemp -d /tmp/sim.XXX)
 OUT_DIR="$( pwd )"
 
-if [ $# -ne 2 ]; then
-    echo "usage: $0 confFile maxSimulation"
+if [ $# -ne 3 ]; then
+    echo "usage: $0 confFile section maxSimulation"
     exit 0
 fi
 
 CONF=$1
-MAX_SIM=$2
+SECTION=$2
+MAX_SIM=$3
 # Setup proper cleanup
 cleanup() {
     echo "Simulations abnormally halted!"
@@ -23,13 +24,11 @@ cleanup() {
 
 trap cleanup HUP INT QUIT KILL PIPE TERM
 
-echo "Running simulations from 0 to $2 ..."
-parallel --progress "$SRC_DIR/runSingle.sh $1 {} $TMP_DIR > $TMP_DIR/sim_{}.log 2>&1" ::: $(seq 0 $2)
+echo "Running simulations from 0 to $MAX_SIM ..."
+parallel --progress "$SRC_DIR/runSingle.sh $CONF $SECTION {} $TMP_DIR > $TMP_DIR/sim_{}.log 2>&1" ::: $(seq 0 $MAX_SIM)
 
 echo "Interpolating results ..."
 Rscript $SRC_DIR/interpolate.R "$TMP_DIR" "$OUT_DIR"
 
-NUM_NODES=10
-
 echo "Plotting results ..."
-Rscript $SRC_DIR/plot.R "$OUT_DIR" $NUM_NODES
+Rscript $SRC_DIR/plot.R "$OUT_DIR"
