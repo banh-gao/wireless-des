@@ -56,7 +56,7 @@ load.data <- function(data.file) {
 compute.collision.rate <- function(d) {
     all.packets <- subset(d, event == PKT_RECEIVED | event == PKT_CORRUPTED)
     lost.packets <- subset(all.packets, event == PKT_CORRUPTED)
-    return(data.frame(cr=nrow(lost.packets)/nrow(all.packets)))
+    return(nrow(lost.packets)/nrow(all.packets))
 }
 
 # computes the queue drop rate: dropped packets / generated packets
@@ -64,7 +64,7 @@ compute.drop.rate <- function(d) {
     printf("Computing drop rate...")
     all.packets <- subset(d, event == PKT_GENERATED)
     lost.packets <- subset(d, event == PKT_QUEUE_DROPPED)
-    return(data.frame(dr=nrow(lost.packets)/nrow(all.packets)))
+    return(nrow(lost.packets)/nrow(all.packets))
 }
 
 # compute throughput(bytes/sec): received bytes / simulation time
@@ -72,25 +72,14 @@ compute.throughput <- function(d) {
     printf("Computing throughput...")
     sim.time <- max(d$time)
     received.packets <- subset(d, event == PKT_RECEIVED)
-    return(data.frame(th=sum(received.packets$size)/sim.time))
+    return(sum(received.packets$size)/sim.time)
 }
 
+# compute mean packet size
 compute.packet.size <- function(d) {
     printf("Computing transmitted packets size...")
     all.packets <- subset(d, event == PKT_RECEIVED | event == PKT_CORRUPTED)
-    return(data.frame(sz=mean(all.packets$size)))
-}
-
-calc.stats <- function(data, var) {
-    if(var == 'dr') {
-        return(compute.drop.rate(data))
-    } else if (var == 'cr') {
-        return(compute.collision.rate(data))
-    } else if (var == 'th') {
-        return(compute.throughput(data))
-    } else if (var == 'sz') {
-        return(compute.packet.size(data))
-    }
+    return(mean(all.packets$size))
 }
 
 save.results <- function(res, pars, out.folder) {
@@ -99,22 +88,18 @@ save.results <- function(res, pars, out.folder) {
     out.path <- paste(out.folder, filename , sep='/')
     printf("Saving stats in %s ...", out.path)
 
-    # Save params as columns
-    res <- cbind(pars, res)
-
     saveRDS(res, file=out.path)
 }
 
 ## load simulation data
 data <- load.data(data.file)
 
-## Calculate statistics for each var separately
-vars <- c('cr', 'dr', 'th', 'sz')
-stat.by.var <- Map(calc.stats, list(data), vars)
-print(stat.by.var)
-
-## Merge vars is a single result file per simulation
-res <- Reduce(merge, stat.by.var)
-
 pars <- get.params(data.file)
-save.results(res, pars, out.folder)
+out <- data.frame(pars)
+
+out$dr <- compute.drop.rate(data)
+out$cr <- compute.collision.rate(data)
+out$th <- compute.throughput(data)
+out$sz <- compute.packet.size(data)
+
+save.results(out, pars, out.folder)
