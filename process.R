@@ -74,23 +74,13 @@ compute.throughput <- function(d) {
     printf("Computing throughput...")
     sim.time <- max(d$time)
     received.packets <- subset(d, event == PKT_RECEIVED)
-<<<<<<< HEAD
-=======
-    if(nrow(received.packets) == 0)
-        return(0)
->>>>>>> fix-slots
     return(sum(received.packets$size)/sim.time)
 }
 
 # compute mean packet size
 compute.packet.size <- function(d) {
-<<<<<<< HEAD
-    printf("Computing transmitted packets size...")
-    all.packets <- subset(d, event == PKT_RECEIVED | event == PKT_CORRUPTED)
-=======
     printf("Computing average packets size...")
     all.packets <- subset(d, event == PKT_GENERATED)
->>>>>>> fix-slots
     return(mean(all.packets$size))
 }
 
