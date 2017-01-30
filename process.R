@@ -61,15 +61,16 @@ compute.collision.rate <- function(d) {
     return(nrow(lost.packets)/nrow(all.packets))
 }
 
-# computes the queue drop rate: dropped packets / generated packets
-compute.drop.rate <- function(d) {
-    printf("Computing drop rate...")
-    all.packets <- subset(d, event == PKT_GENERATED)
-    lost.packets <- subset(d, event == PKT_QUEUE_DROPPED)
-    return(nrow(lost.packets)/nrow(all.packets))
+# computes the delivery rate: received packets / generated packets * (num.nodes - 1)
+compute.delivery.rate <- function(d, num.nodes) {
+    printf("Computing delivery rate...")
+    # Assume broadcast: a generated packet has to be received to all nodes except the sender one
+    gen.packets <- subset(d, event == PKT_GENERATED)
+    rcv.packets <- subset(d, event == PKT_RECEIVED)
+    return(nrow(rcv.packets)/(nrow(gen.packets) * (num.nodes - 1)))
 }
 
-# compute throughput(bytes/sec): received bytes / simulation time
+# compute global throughput(bytes/sec): received bytes / simulation time
 compute.throughput <- function(d) {
     printf("Computing throughput...")
     sim.time <- max(d$time)
@@ -99,7 +100,7 @@ data <- load.data(data.file)
 pars <- get.params(data.file)
 out <- data.frame(pars)
 
-out$dr <- compute.drop.rate(data)
+out$dr <- compute.delivery.rate(data, pars$nodes)
 out$cr <- compute.collision.rate(data)
 out$th <- compute.throughput(data)
 out$sz <- compute.packet.size(data)
