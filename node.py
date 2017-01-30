@@ -167,7 +167,6 @@ class Node(FSMNode):
         self.sense_packet_start()
 
         packet = event.get_obj()
-        packet.set_state(Packet.PKT_CORRUPTED)
 
         # If the node is not in IDLE or RX, it is not able to decode a new
         # packet so just ignore it and remain in same state
@@ -203,13 +202,6 @@ class Node(FSMNode):
     def end_packet(self, event):
         # count packet not in the channel anymore and stay in the same state
         self.sense_packet_end()
-
-        packet = event.get_obj()
-        # Since we were are not in RX state this packet starts when the node was
-        # not ready to receive it. This means it has to be set as corrupted
-        # (see drop_receiving method)
-        assert(packet.get_state() == Packet.PKT_CORRUPTED)
-        self.logger.log_packet(event.get_source(), self, packet)
 
         return FSMNode.STAY
 
