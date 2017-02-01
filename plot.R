@@ -24,32 +24,31 @@ plot.by.nodes <- function(data, n) {
     ggplot(res.by.node, aes(x=ol, y=th, linetype=slots, color=slots)) +
         geom_line(size=0.5) +
         geom_point(size=0.7) +
-        scale_linetype_manual(name="Time Slots", values = c(1,5,6,3)) +
-        scale_color_brewer(name="Time Slots", type="div") +
+        scale_linetype_manual(name="Window Size", values = c(1,5,3)) +
+        scale_color_brewer(name="Window Size", palette = "Set1") +
         xlab('total offered load (Mbps)') +
         ylab('throughput at receiver (Mbps)') +
-        xlim(0,30)
-    ggsave(paste(res.folder, sprintf('/thr_%i.pdf', n), sep=''), width=16/div, height=9/div)
+        xlim(0, 50)
+    ggsave(paste(res.folder, 'thr.pdf', sep='/'), width=16/div, height=9/div)
 
     ggplot(results, aes(x=ol, y=cr, linetype=slots, color=slots)) +
         geom_line(size=0.5) +
         geom_point(size=0.7) +
-        scale_linetype_manual(name="Time Slots", values = c(1,5,6,3)) +
-        scale_color_brewer(name="Time Slots", type="div") +
+        scale_linetype_manual(name="Window Size", values = c(1,5,3)) +
+        scale_color_brewer(name="Window Size", palette = "Set1") +
         xlab('total offered load (Mbps)') +
-        ylab('packet collision rate at receiver') +
-        xlim(0,30)
-    ggsave(paste(res.folder, sprintf('/pcr_%i.pdf', n[1]), sep=''), width=16/div, height=9/div)
+        ylab('packet collision rate')
+    ggsave(paste(res.folder, 'pcr.pdf', sep='/'), width=16/div, height=9/div)
 
     ggplot(results, aes(x=ol, y=dr, linetype=slots, color=slots)) +
         geom_line(size=0.5) +
         geom_point(size=0.7) +
-        scale_linetype_manual(name="Time Slots", values = c(1,5,6,3)) +
-        scale_color_brewer(name="Time Slots", type="div") +
+        scale_linetype_manual(name="Window Size", values = c(1,5,3)) +
+        scale_color_brewer(name="Window Size", palette = "Set1") +
         xlab('total offered load (Mbps)') +
-        ylab('packet delivery rate at receiver') +
-        xlim(0,30)
-    ggsave(paste(res.folder, sprintf('/pdr_%i.pdf', n[1]), sep=''), width=16/div, height=9/div)
+        ylab('packet delivery rate') +
+        xlim(0, 50)
+    ggsave(paste(res.folder, 'pdr.pdf', sep='/'), width=16/div, height=9/div)
 }
 
 Map(plot.by.nodes, list(results), as.list(unique(results$nodes)))
